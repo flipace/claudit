@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Download Claudit — Claude Code Usage Monitor</title>
-  <meta name="description" content="Download Claudit for macOS. Monitor your Claude Code usage with real-time analytics.">
+  <meta name="description" content="Download Claudit for macOS, Windows, and Linux. Monitor your Claude Code usage with real-time analytics.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -240,18 +240,33 @@
   <template id="icon-macos">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a9 9 0 0 0-9 9c0 4.17 2.84 7.67 6.69 8.69a.5.5 0 0 0 .6-.41l.21-1.29a.5.5 0 0 0-.4-.57A7 7 0 0 1 5 11a7 7 0 0 1 14 0 7 7 0 0 1-4.1 6.42.5.5 0 0 0-.4.57l.21 1.29a.5.5 0 0 0 .6.41A9 9 0 0 0 12 2z"/><circle cx="12" cy="11" r="3"/></svg>
   </template>
+  <template id="icon-linux">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+  </template>
+  <template id="icon-windows">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+  </template>
 
   <script>
     const MINIO_BASE_URL = 'https://claudit-minio.cloud.neschkudla.at/claudit-releases';
 
     const platformInfo = {
-      macos: { iconId: 'icon-macos', label: 'macOS' }
+      macos: { iconId: 'icon-macos', label: 'macOS' },
+      linux: { iconId: 'icon-linux', label: 'Linux' },
+      windows: { iconId: 'icon-windows', label: 'Windows' }
     };
 
     function parseFileName(name) {
       const lower = name.toLowerCase();
+      // macOS
       if (lower.endsWith('.dmg')) return { platform: 'macos', type: 'DMG' };
       if (lower.endsWith('.app.tar.gz')) return { platform: 'macos', type: 'App Bundle' };
+      // Linux
+      if (lower.endsWith('.appimage')) return { platform: 'linux', type: 'AppImage' };
+      if (lower.endsWith('.deb')) return { platform: 'linux', type: 'DEB' };
+      // Windows
+      if (lower.includes('-setup') && lower.endsWith('.exe')) return { platform: 'windows', type: 'Installer (EXE)' };
+      if (lower.endsWith('.msi')) return { platform: 'windows', type: 'MSI' };
       return null;
     }
 
@@ -325,7 +340,7 @@
       body.className = 'release-body';
       const grid = document.createElement('div');
       grid.className = 'platform-grid';
-      ['macos'].forEach(platform => {
+      ['macos', 'windows', 'linux'].forEach(platform => {
         const platformFiles = release.files.filter(f => f.platform === platform);
         if (platformFiles.length > 0) {
           grid.appendChild(createPlatformSection(platform, platformFiles));
@@ -416,8 +431,19 @@
         if (releases.length === 0) { showNoReleases(content); return; }
         content.replaceChildren();
         const latestRelease = releases[0];
-        const macosFiles = latestRelease.files.filter(f => f.platform === 'macos');
-        if (macosFiles.length > 0) {
+
+        // Detect user's platform
+        function detectPlatform() {
+          const ua = navigator.userAgent.toLowerCase();
+          if (ua.includes('mac')) return 'macos';
+          if (ua.includes('win')) return 'windows';
+          if (ua.includes('linux')) return 'linux';
+          return 'macos'; // default
+        }
+        const userPlatform = detectPlatform();
+        const platformFiles = latestRelease.files.filter(f => f.platform === userPlatform);
+
+        if (platformFiles.length > 0) {
           const recommended = document.createElement('div');
           recommended.className = 'recommended-card animate-in';
           const header = document.createElement('div');
@@ -433,9 +459,9 @@
           recommended.appendChild(header);
           const title = document.createElement('div');
           title.className = 'recommended-title';
-          title.appendChild(cloneIcon('icon-macos'));
+          title.appendChild(cloneIcon(platformInfo[userPlatform].iconId));
           const titleText = document.createElement('span');
-          titleText.textContent = 'Claudit for macOS';
+          titleText.textContent = 'Claudit for ' + platformInfo[userPlatform].label;
           title.appendChild(titleText);
           recommended.appendChild(title);
           const subtitle = document.createElement('p');
@@ -444,7 +470,7 @@
           recommended.appendChild(subtitle);
           const buttons = document.createElement('div');
           buttons.className = 'download-buttons';
-          macosFiles.forEach(file => { buttons.appendChild(createDownloadButton(file, true)); });
+          platformFiles.forEach(file => { buttons.appendChild(createDownloadButton(file, true)); });
           recommended.appendChild(buttons);
           content.appendChild(recommended);
         }
