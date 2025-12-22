@@ -81,10 +81,7 @@
     }
     .logo-icon {
       width: 32px; height: 32px;
-      background: linear-gradient(135deg, var(--accent) 0%, #c45d3d 100%);
       border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
     }
 
     .nav-links { display: flex; align-items: center; gap: 8px; }
@@ -172,9 +169,7 @@
     .app-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
     .app-logo-icon {
       width: 28px; height: 28px;
-      background: var(--accent); border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--bg-primary); font-weight: 700; font-size: 14px;
+      border-radius: 6px;
     }
     .app-tabs {
       display: flex; gap: 4px;
@@ -270,7 +265,7 @@
   <header>
     <div class="container">
       <div class="header-content">
-        <a href="/" class="logo"><span class="logo-icon">C</span> Claudit</a>
+        <a href="/" class="logo"><img class="logo-icon" src="icon.png" alt="Claudit"> Claudit</a>
         <div class="nav-links">
           <a href="/changelog.html" class="nav-link">Changelog</a>
           <a href="/download.html" class="nav-link">Download</a>
@@ -306,7 +301,7 @@
               <div class="traffic-light green"></div>
             </div>
             <div class="app-header">
-              <div class="app-logo"><div class="app-logo-icon">C</div><span>Claudit</span></div>
+              <div class="app-logo"><img class="app-logo-icon" src="icon.png" alt="Claudit"><span>Claudit</span></div>
               <div class="app-tabs">
                 <button class="app-tab active"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Analytics</button>
                 <button class="app-tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Settings</button>
