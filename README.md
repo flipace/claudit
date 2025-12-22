@@ -2,7 +2,7 @@
 
 A native desktop application that provides real-time usage analytics for Claude Code.
 
-> **Note:** Claudit was mostly coded by [Claude Code](https://claude.ai/claude-code) itself.
+> **Note:** Claudit was mostly coded by [Claude Code](https://claude.ai/code) itself.
 
 ![Claudit](claudit-screen.png)
 
@@ -12,7 +12,7 @@ A native desktop application that provides real-time usage analytics for Claude 
 - **Burn Rate**: See your $/hour spending rate
 - **Session Tracking**: 5-hour session block monitoring
 - **Project Insights**: Per-project and per-model breakdowns
-- **Interactive Dashboard**: 8 charts for deep usage analysis
+- **Interactive Dashboard**: Charts for usage analysis (tokens, costs, models, projects)
 - **Notifications**: Get notified when Claude finishes responding
 - **Project Browser**: Browse all Claude Code projects with usage stats
 - **AI Suggestions**: Get Claude-powered suggestions to improve project workflow
@@ -93,19 +93,21 @@ claudit/
 
 ## Hook Integration
 
-Claudit can receive events from Claude Code hooks for real-time notifications:
+Claudit runs a local HTTP server to receive events from Claude Code hooks for real-time notifications. Configure hooks in the app's Settings page, or manually add to `~/.claude/settings.json`:
 
-```bash
-# Health check
-curl http://localhost:3456/
-
-# Send hook event
-curl -X POST http://localhost:3456/hook \
-  -H "Content-Type: application/json" \
-  -d '{"event": "Stop"}'
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "curl -s -X POST http://localhost:3456/hook -H \"Content-Type: application/json\" -d '{\"event\": \"Stop\"}' > /dev/null 2>&1 &"
+      }]
+    }]
+  }
+}
 ```
-
-See the [landing page](https://claudit.cloud.neschkudla.at) for hook configuration instructions.
 
 ## License
 
@@ -113,4 +115,4 @@ UNLICENSED - All rights reserved.
 
 ---
 
-Made by [@flipace](https://github.com/flipace) and [Claude Code](https://claude.ai)
+Made by [@flipace](https://github.com/flipace) and [Claude Code](https://claude.ai/code)
