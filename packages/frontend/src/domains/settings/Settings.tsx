@@ -116,8 +116,13 @@ export function Settings() {
     }
   };
 
-  const handleTestNotification = () => {
-    sendNotification({ title: "Claudit Test", body: "This is a test notification" });
+  const handleTestNotification = async () => {
+    try {
+      await sendNotification({ title: "Claudit Test", body: "This is a test notification" });
+      console.log("Test notification sent");
+    } catch (e) {
+      console.error("Failed to send test notification:", e);
+    }
   };
 
   const handleToggle = (key: keyof AppSettings, value: boolean) => {
@@ -246,7 +251,7 @@ export function Settings() {
                   {notificationPermission === null
                     ? "Checking permission..."
                     : notificationPermission
-                    ? "Permission granted"
+                    ? "Permission granted — ensure Banners/Alerts enabled in System Settings → Notifications"
                     : "Permission required for notifications"}
                 </p>
               </div>
