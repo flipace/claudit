@@ -28,3 +28,4 @@ npm-debug.log*
 # Lock files (keep package-lock.json, ignore others)
 pnpm-lock.yaml
 yarn.lock
+*.tsbuildinfo
