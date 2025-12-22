@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Claude-inspired dark theme with warm coral accents */
+    --background: 220 13% 8%;
+    --foreground: 30 20% 95%;
+    --card: 220 13% 10%;
+    --card-foreground: 30 20% 95%;
+    --primary: 17 76% 59%; /* Claude coral */
+    --primary-foreground: 220 13% 8%;
+    --secondary: 220 10% 14%;
+    --secondary-foreground: 30 20% 95%;
+    --muted: 220 10% 14%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 17 76% 59%; /* Claude coral */
+    --accent-foreground: 220 13% 8%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 10% 16%;
+    --input: 220 10% 16%;
+    --ring: 17 76% 59%;
+
+    /* Custom Claude colors */
+    --claude-coral: 17 76% 59%;
+    --claude-coral-hover: 17 76% 65%;
+    --claude-dark: 220 13% 8%;
+    --claude-card: 220 13% 11%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Restore cursor: pointer for interactive elements (removed in Tailwind 4) */
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  a,
+  label[for],
+  select,
+  summary,
+  [tabindex]:not([tabindex="-1"]),
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+}
+
+/* Container utility */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}

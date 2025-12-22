@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Claudit — Claude Code Usage Monitor</title>
+  <meta name="description" content="Download Claudit for macOS. Monitor your Claude Code usage with real-time analytics.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #14161e;
+      --bg-elevated: #1a1d27;
+      --bg-card: #1e212c;
+      --text-primary: #f5f0eb;
+      --text-secondary: #9b958d;
+      --text-muted: #6b655d;
+      --accent: #d97757;
+      --accent-hover: #e08868;
+      --accent-glow: rgba(217, 119, 87, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: -150px; right: -100px;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; }
+
+    header { padding: 24px 0; position: relative; z-index: 10; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-mono); font-weight: 600; font-size: 18px;
+      color: var(--text-primary); text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, #c45d3d 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--text-secondary);
+      text-decoration: none; font-size: 14px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--text-primary); }
+
+    main { padding: 40px 0 80px; position: relative; z-index: 10; }
+
+    h1 { font-family: var(--font-mono); font-size: 32px; font-weight: 600; margin-bottom: 12px; }
+    .subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 40px; }
+
+    .loading { display: flex; align-items: center; justify-content: center; padding: 80px 0; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card, .no-releases {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px;
+      text-align: center;
+    }
+    .error-card { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+    .error-card p { color: #f87171; margin-bottom: 8px; }
+    .hint { color: var(--text-muted); font-size: 14px; }
+
+    .recommended-card {
+      background: rgba(217, 119, 87, 0.08);
+      border: 1px solid rgba(217, 119, 87, 0.25);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .recommended-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 10px;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase;
+      border-radius: 6px;
+    }
+    .badge-primary { background: var(--accent); color: #0a0a0f; }
+    .badge-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .badge-latest { background: var(--bg-elevated); color: var(--text-secondary); }
+
+    .recommended-title { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .recommended-title svg { width: 24px; height: 24px; flex-shrink: 0; }
+    .recommended-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+
+    .download-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px;
+      font-size: 14px; font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0f;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--accent-glow); }
+    .btn svg { width: 18px; height: 18px; }
+    .file-size { font-size: 12px; opacity: 0.7; }
+
+    .releases-section h2 { font-family: var(--font-mono); font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+
+    .release-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .release-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .release-version { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
+    .release-body { padding: 16px 20px; }
+
+    .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .platform-section { display: flex; flex-direction: column; gap: 8px; }
+    .platform-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .platform-label svg { width: 16px; height: 16px; }
+    .platform-files { display: flex; flex-direction: column; gap: 6px; }
+
+    .file-link {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .file-link:hover { color: var(--text-primary); }
+    .file-link svg { width: 14px; height: 14px; }
+
+    footer { padding: 40px 0; border-top: 1px solid var(--border); position: relative; z-index: 10; }
+    .footer-content { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-muted); }
+    .footer-content a { color: var(--text-secondary); text-decoration: none; }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeInUp 0.5s ease forwards; }
+
+    @media (max-width: 600px) { h1 { font-size: 24px; } .platform-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="gradient-orb"></div>
+
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="logo"><span class="logo-icon">C</span> Claudit</a>
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <a href="/changelog.html" class="back-link" style="margin-right: 0;">Changelog</a>
+          <a href="/" class="back-link">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to home
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1>Download Claudit</h1>
+      <p class="subtitle">Download Claudit for your operating system.</p>
+      <div id="content">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <span>Built by <a href="https://github.com/flipace">@flipace</a> and <a href="https://claude.ai/code">Claude Code</a></span>
+        <span>&copy; 2025 Claudit</span>
+      </div>
+    </div>
+  </footer>
+
+  <template id="icon-download">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </template>
+  <template id="icon-macos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a9 9 0 0 0-9 9c0 4.17 2.84 7.67 6.69 8.69a.5.5 0 0 0 .6-.41l.21-1.29a.5.5 0 0 0-.4-.57A7 7 0 0 1 5 11a7 7 0 0 1 14 0 7 7 0 0 1-4.1 6.42.5.5 0 0 0-.4.57l.21 1.29a.5.5 0 0 0 .6.41A9 9 0 0 0 12 2z"/><circle cx="12" cy="11" r="3"/></svg>
+  </template>
+
+  <script>
+    const MINIO_BASE_URL = 'https://claudit-minio.cloud.neschkudla.at/claudit-releases';
+
+    const platformInfo = {
+      macos: { iconId: 'icon-macos', label: 'macOS' }
+    };
+
+    function parseFileName(name) {
+      const lower = name.toLowerCase();
+      if (lower.endsWith('.dmg')) return { platform: 'macos', type: 'DMG' };
+      if (lower.endsWith('.app.tar.gz')) return { platform: 'macos', type: 'App Bundle' };
+      return null;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function cloneIcon(id) {
+      const template = document.getElementById(id);
+      return template.content.cloneNode(true).firstElementChild;
+    }
+
+    function createDownloadButton(file, isPrimary) {
+      const a = document.createElement('a');
+      a.href = file.url;
+      a.download = '';
+      a.className = isPrimary ? 'btn btn-primary' : 'file-link';
+      a.appendChild(cloneIcon('icon-download'));
+      const typeSpan = document.createElement('span');
+      typeSpan.textContent = file.type;
+      a.appendChild(typeSpan);
+      if (file.size) {
+        const sizeSpan = document.createElement('span');
+        sizeSpan.className = 'file-size';
+        sizeSpan.textContent = '(' + file.size + ')';
+        a.appendChild(sizeSpan);
+      }
+      return a;
+    }
+
+    function createPlatformSection(platform, files) {
+      const section = document.createElement('div');
+      section.className = 'platform-section';
+      const label = document.createElement('div');
+      label.className = 'platform-label';
+      label.appendChild(cloneIcon(platformInfo[platform].iconId));
+      const labelText = document.createElement('span');
+      labelText.textContent = platformInfo[platform].label;
+      label.appendChild(labelText);
+      section.appendChild(label);
+      const filesDiv = document.createElement('div');
+      filesDiv.className = 'platform-files';
+      files.forEach(file => { filesDiv.appendChild(createDownloadButton(file, false)); });
+      section.appendChild(filesDiv);
+      return section;
+    }
+
+    function createReleaseCard(release, isLatest) {
+      const card = document.createElement('div');
+      card.className = 'release-card';
+      const header = document.createElement('div');
+      header.className = 'release-header';
+      const versionDiv = document.createElement('div');
+      versionDiv.className = 'release-version';
+      const versionText = document.createElement('span');
+      versionText.textContent = release.version;
+      versionDiv.appendChild(versionText);
+      if (isLatest) {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-latest';
+        badge.textContent = 'Latest';
+        versionDiv.appendChild(badge);
+      }
+      header.appendChild(versionDiv);
+      card.appendChild(header);
+      const body = document.createElement('div');
+      body.className = 'release-body';
+      const grid = document.createElement('div');
+      grid.className = 'platform-grid';
+      ['macos'].forEach(platform => {
+        const platformFiles = release.files.filter(f => f.platform === platform);
+        if (platformFiles.length > 0) {
+          grid.appendChild(createPlatformSection(platform, platformFiles));
+        }
+      });
+      if (grid.children.length === 0) {
+        const noDownloads = document.createElement('p');
+        noDownloads.style.color = 'var(--text-muted)';
+        noDownloads.textContent = 'No downloads available';
+        grid.appendChild(noDownloads);
+      }
+      body.appendChild(grid);
+      card.appendChild(body);
+      return card;
+    }
+
+    function showError(container, message) {
+      container.replaceChildren();
+      const errorCard = document.createElement('div');
+      errorCard.className = 'error-card animate-in';
+      const errorText = document.createElement('p');
+      errorText.textContent = message;
+      errorCard.appendChild(errorText);
+      const hint = document.createElement('p');
+      hint.className = 'hint';
+      hint.textContent = 'Please try again later or check back soon.';
+      errorCard.appendChild(hint);
+      container.appendChild(errorCard);
+    }
+
+    function showNoReleases(container) {
+      container.replaceChildren();
+      const noReleases = document.createElement('div');
+      noReleases.className = 'no-releases animate-in';
+      const p1 = document.createElement('p');
+      p1.textContent = 'No releases available yet.';
+      noReleases.appendChild(p1);
+      const p2 = document.createElement('p');
+      p2.className = 'hint';
+      p2.textContent = 'Check back soon!';
+      noReleases.appendChild(p2);
+      container.appendChild(noReleases);
+    }
+
+    async function fetchReleases() {
+      const content = document.getElementById('content');
+      try {
+        const response = await fetch(MINIO_BASE_URL + '?list-type=2');
+        if (!response.ok) throw new Error('Could not load releases');
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const contents = xml.querySelectorAll('Contents');
+        const fileMap = new Map();
+        contents.forEach(item => {
+          const key = item.querySelector('Key')?.textContent;
+          const size = item.querySelector('Size')?.textContent;
+          if (!key) return;
+          const parts = key.split('/');
+          if (parts.length < 2) return;
+          const version = parts[0];
+          const fileName = parts[parts.length - 1];
+          const parsed = parseFileName(fileName);
+          if (!parsed) return;
+          if (!fileMap.has(version)) fileMap.set(version, new Map());
+          const versionFiles = fileMap.get(version);
+          const fileKey = parsed.platform + '-' + parsed.type;
+          if (!versionFiles.has(fileKey)) {
+            versionFiles.set(fileKey, {
+              name: fileName,
+              url: MINIO_BASE_URL + '/' + key,
+              platform: parsed.platform,
+              type: parsed.type,
+              size: size ? formatBytes(parseInt(size)) : null
+            });
+          }
+        });
+        const releases = Array.from(fileMap.entries())
+          .map(([version, files]) => ({ version, files: Array.from(files.values()) }))
+          .sort((a, b) => {
+            const aVer = a.version.replace(/^v/, '').split('.').map(Number);
+            const bVer = b.version.replace(/^v/, '').split('.').map(Number);
+            for (let i = 0; i < 3; i++) {
+              if ((bVer[i] || 0) !== (aVer[i] || 0)) return (bVer[i] || 0) - (aVer[i] || 0);
+            }
+            return 0;
+          });
+        if (releases.length === 0) { showNoReleases(content); return; }
+        content.replaceChildren();
+        const latestRelease = releases[0];
+        const macosFiles = latestRelease.files.filter(f => f.platform === 'macos');
+        if (macosFiles.length > 0) {
+          const recommended = document.createElement('div');
+          recommended.className = 'recommended-card animate-in';
+          const header = document.createElement('div');
+          header.className = 'recommended-header';
+          const badgePrimary = document.createElement('span');
+          badgePrimary.className = 'badge badge-primary';
+          badgePrimary.textContent = 'Recommended';
+          header.appendChild(badgePrimary);
+          const badgeVersion = document.createElement('span');
+          badgeVersion.className = 'badge badge-outline';
+          badgeVersion.textContent = latestRelease.version;
+          header.appendChild(badgeVersion);
+          recommended.appendChild(header);
+          const title = document.createElement('div');
+          title.className = 'recommended-title';
+          title.appendChild(cloneIcon('icon-macos'));
+          const titleText = document.createElement('span');
+          titleText.textContent = 'Claudit for macOS';
+          title.appendChild(titleText);
+          recommended.appendChild(title);
+          const subtitle = document.createElement('p');
+          subtitle.className = 'recommended-subtitle';
+          subtitle.textContent = 'Latest version for your system';
+          recommended.appendChild(subtitle);
+          const buttons = document.createElement('div');
+          buttons.className = 'download-buttons';
+          macosFiles.forEach(file => { buttons.appendChild(createDownloadButton(file, true)); });
+          recommended.appendChild(buttons);
+          content.appendChild(recommended);
+        }
+        const releasesSection = document.createElement('div');
+        releasesSection.className = 'releases-section animate-in';
+        releasesSection.style.animationDelay = '0.1s';
+        const h2 = document.createElement('h2');
+        h2.textContent = 'All Versions';
+        releasesSection.appendChild(h2);
+        releases.forEach((release, i) => { releasesSection.appendChild(createReleaseCard(release, i === 0)); });
+        content.appendChild(releasesSection);
+      } catch (err) {
+        console.error('Failed to fetch releases:', err);
+        showError(content, 'Could not load releases');
+      }
+    }
+    fetchReleases();
+  </script>
+</body>
+</html>

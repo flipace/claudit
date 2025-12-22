@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+packages/frontend/dist/
+
+# Rust/Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Lock files (keep package-lock.json, ignore others)
+pnpm-lock.yaml
+yarn.lock

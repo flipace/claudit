@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claudit — Claude Code Usage Monitor</title>
+  <meta name="description" content="A native macOS menu bar app for monitoring Claude Code usage. Track tokens, costs, and get real-time notifications.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #14161e;
+      --bg-elevated: #1a1d27;
+      --bg-card: #1e212c;
+      --text-primary: #f5f0eb;
+      --text-secondary: #9b958d;
+      --text-muted: #6b655d;
+      --accent: #d97757;
+      --accent-hover: #e08868;
+      --accent-glow: rgba(217, 119, 87, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .gradient-orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: -200px; right: -100px;
+    }
+    .gradient-orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+      bottom: 20%; left: -100px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; }
+
+    header { padding: 24px 0; position: relative; z-index: 10; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-mono); font-weight: 600; font-size: 18px;
+      color: var(--text-primary); text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, #c45d3d 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: var(--text-secondary); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      padding: 8px 16px; border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .nav-link:hover { color: var(--text-primary); background: var(--bg-elevated); }
+
+    .hero { padding: 60px 0 80px; position: relative; z-index: 10; }
+    .hero-content { max-width: 680px; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 100px;
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--text-secondary); margin-bottom: 32px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent); border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .hero h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 600; line-height: 1.1;
+      letter-spacing: -0.02em; margin-bottom: 24px;
+    }
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero-description {
+      font-size: 18px; color: var(--text-secondary);
+      margin-bottom: 40px; max-width: 520px;
+    }
+
+    .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px;
+      background: var(--accent); color: #0a0a0f;
+      font-weight: 600; font-size: 15px;
+      border-radius: 10px; text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--accent-glow), 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .btn-primary svg { width: 18px; height: 18px; }
+
+    .platform-note { font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    .app-preview { margin-top: 60px; position: relative; }
+    .app-window {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 25px 60px -15px rgba(0,0,0,0.5), 0 0 100px -50px var(--accent-glow);
+    }
+
+    .app-titlebar {
+      display: flex; align-items: center;
+      padding: 0 16px; height: 48px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .traffic-lights { display: flex; gap: 8px; padding-right: 8px; }
+    .traffic-light { width: 12px; height: 12px; border-radius: 50%; }
+    .traffic-light.red { background: #ff5f57; }
+    .traffic-light.yellow { background: #febc2e; }
+    .traffic-light.green { background: #28c840; }
+
+    .app-header { display: flex; align-items: center; gap: 16px; flex: 1; }
+    .app-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+    .app-logo-icon {
+      width: 28px; height: 28px;
+      background: var(--accent); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--bg-primary); font-weight: 700; font-size: 14px;
+    }
+    .app-tabs {
+      display: flex; gap: 4px;
+      background: var(--bg-primary); padding: 3px;
+      border-radius: 8px; margin-left: auto;
+    }
+    .app-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; font-size: 11px; font-weight: 500;
+      color: var(--text-muted); background: transparent;
+      border: none; border-radius: 5px; cursor: pointer;
+    }
+    .app-tab.active { background: var(--bg-elevated); color: var(--text-primary); }
+
+    .app-body { padding: 20px; min-height: 340px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px;
+    }
+    .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .stat-value { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    .stat-subtitle { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .chart-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px; }
+    .chart-placeholder { height: 100px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 0; }
+    .chart-bar { flex: 1; border-radius: 3px 3px 0 0; }
+    .chart-bar.coral { background: linear-gradient(180deg, var(--accent) 0%, rgba(217, 119, 87, 0.3) 100%); }
+    .chart-bar.purple { background: linear-gradient(180deg, #8b5cf6 0%, rgba(139, 92, 246, 0.3) 100%); }
+
+    .app-footer {
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 10px; color: var(--text-muted);
+    }
+
+    .features { padding: 80px 0; position: relative; z-index: 10; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .feature-card {
+      padding: 28px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+    .feature-card:hover { border-color: var(--border-hover); background: var(--bg-elevated); }
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; font-size: 18px;
+    }
+    .feature-card h3 { font-family: var(--font-mono); font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    .feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+    footer { padding: 40px 0; border-top: 1px solid var(--border); position: relative; z-index: 10; }
+    .footer-content { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .footer-left { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+    .footer-left a { color: var(--text-secondary); text-decoration: none; }
+    .footer-left a:hover { color: var(--text-primary); }
+    .footer-right { font-size: 13px; color: var(--text-muted); }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-badge { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s; opacity: 0; }
+    .hero h1 { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s; opacity: 0; }
+    .hero-description { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.3s; opacity: 0; }
+    .hero-actions { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.4s; opacity: 0; }
+    .app-preview { animation: fadeInUp 0.8s ease forwards; animation-delay: 0.5s; opacity: 0; }
+    .feature-card:nth-child(1) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.6s; opacity: 0; }
+    .feature-card:nth-child(2) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.7s; opacity: 0; }
+    .feature-card:nth-child(3) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.8s; opacity: 0; }
+    .feature-card:nth-child(4) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.9s; opacity: 0; }
+
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .hero { padding: 40px 0 60px; } .hero h1 { font-size: 28px; } .hero-description { font-size: 16px; } .features { padding: 60px 0; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <div class="gradient-orb gradient-orb-1"></div>
+  <div class="gradient-orb gradient-orb-2"></div>
+
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="logo"><span class="logo-icon">C</span> Claudit</a>
+        <div class="nav-links">
+          <a href="/changelog.html" class="nav-link">Changelog</a>
+          <a href="/download.html" class="nav-link">Download</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <span id="hero-version">v0.1.0</span> — Now Available
+        </div>
+        <h1>Monitor your<br><span class="accent">Claude Code</span> usage</h1>
+        <p class="hero-description">A native macOS menu bar app for tracking Claude Code usage. Monitor tokens, costs, burn rate, and get notified when Claude finishes responding.</p>
+        <div class="hero-actions">
+          <a href="/download.html" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download for macOS
+          </a>
+          <span class="platform-note">macOS 10.15+ (Apple Silicon)</span>
+        </div>
+      </div>
+
+      <div class="app-preview">
+        <div class="app-window">
+          <div class="app-titlebar">
+            <div class="traffic-lights">
+              <div class="traffic-light red"></div>
+              <div class="traffic-light yellow"></div>
+              <div class="traffic-light green"></div>
+            </div>
+            <div class="app-header">
+              <div class="app-logo"><div class="app-logo-icon">C</div><span>Claudit</span></div>
+              <div class="app-tabs">
+                <button class="app-tab active"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Analytics</button>
+                <button class="app-tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Settings</button>
+              </div>
+            </div>
+          </div>
+          <div class="app-body">
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-label">Messages Today</div><div class="stat-value">42</div><div class="stat-subtitle">1,284 total</div></div>
+              <div class="stat-card"><div class="stat-label">Tokens Today</div><div class="stat-value">847K</div><div class="stat-subtitle">312K in / 535K out</div></div>
+              <div class="stat-card"><div class="stat-label">Cost Today</div><div class="stat-value">$2.14</div><div class="stat-subtitle">$47.82 total</div></div>
+              <div class="stat-card"><div class="stat-label">Burn Rate</div><div class="stat-value">142/min</div><div class="stat-subtitle">$0.28/hr</div></div>
+              <div class="stat-card"><div class="stat-label">Sessions Today</div><div class="stat-value">8</div><div class="stat-subtitle">156 total</div></div>
+              <div class="stat-card"><div class="stat-label">Cache Hit Rate</div><div class="stat-value">23.4%</div><div class="stat-subtitle">1.2M cached</div></div>
+            </div>
+            <div class="charts-grid">
+              <div class="chart-card">
+                <div class="chart-title">Daily Token Usage</div>
+                <div class="chart-placeholder">
+                  <div class="chart-bar coral" style="height: 40%"></div>
+                  <div class="chart-bar coral" style="height: 55%"></div>
+                  <div class="chart-bar coral" style="height: 35%"></div>
+                  <div class="chart-bar coral" style="height: 70%"></div>
+                  <div class="chart-bar coral" style="height: 45%"></div>
+                  <div class="chart-bar coral" style="height: 60%"></div>
+                  <div class="chart-bar coral" style="height: 85%"></div>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-title">Daily Cost</div>
+                <div class="chart-placeholder">
+                  <div class="chart-bar purple" style="height: 30%"></div>
+                  <div class="chart-bar purple" style="height: 45%"></div>
+                  <div class="chart-bar purple" style="height: 25%"></div>
+                  <div class="chart-bar purple" style="height: 60%"></div>
+                  <div class="chart-bar purple" style="height: 40%"></div>
+                  <div class="chart-bar purple" style="height: 55%"></div>
+                  <div class="chart-bar purple" style="height: 75%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="app-footer">Last updated: just now</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-card"><div class="feature-icon">📊</div><h3>Real-time Analytics</h3><p>Track token consumption, costs, and burn rate. See daily trends with interactive charts for tokens, costs, and usage patterns.</p></div>
+        <div class="feature-card"><div class="feature-icon">🔔</div><h3>Smart Notifications</h3><p>Get notified when Claude finishes responding. Install Claude Code hooks with one click to enable real-time alerts.</p></div>
+        <div class="feature-card"><div class="feature-icon">📈</div><h3>Usage Insights</h3><p>View per-project and per-model breakdowns. Track sessions, cache hit rates, and identify your most active coding hours.</p></div>
+        <div class="feature-card"><div class="feature-icon">🎯</div><h3>Menu Bar Native</h3><p>Lives in your menu bar with live stats. Quick access to today's tokens, costs, and burn rate without leaving your workflow.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-left">Built by <a href="https://github.com/flipace">@flipace</a> and <a href="https://claude.ai/code">Claude Code</a></div>
+        <div class="footer-right">&copy; 2025 Claudit</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (async function() {
+      const MINIO_URL = 'https://claudit-minio.cloud.neschkudla.at/claudit-releases';
+      try {
+        const response = await fetch(MINIO_URL + '?list-type=2');
+        if (!response.ok) return;
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const keys = Array.from(xml.querySelectorAll('Key')).map(k => k.textContent);
+        const versions = [...new Set(keys.map(k => k.split('/')[0]).filter(v => v.startsWith('v')))]
+          .sort((a, b) => {
+            const aVer = a.replace(/^v/, '').split('.').map(Number);
+            const bVer = b.replace(/^v/, '').split('.').map(Number);
+            for (let i = 0; i < 3; i++) {
+              if ((bVer[i] || 0) !== (aVer[i] || 0)) return (bVer[i] || 0) - (aVer[i] || 0);
+            }
+            return 0;
+          });
+        if (versions.length > 0) {
+          document.getElementById('hero-version').textContent = versions[0];
+        }
+      } catch (e) { /* fallback to hardcoded version */ }
+    })();
+  </script>
+</body>
+</html>
