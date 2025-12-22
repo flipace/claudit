@@ -13,10 +13,10 @@ pub struct UsageReader {
 
 impl UsageReader {
     pub fn new() -> Self {
-        let home = dirs::home_dir().expect("Could not find home directory");
-        Self {
-            claude_dir: home.join(".claude").join("projects"),
-        }
+        let claude_dir = dirs::home_dir()
+            .map(|h| h.join(".claude").join("projects"))
+            .unwrap_or_else(|| PathBuf::from("/tmp/.claude/projects"));
+        Self { claude_dir }
     }
 
     /// Find all JSONL files in the Claude projects directory
@@ -24,10 +24,13 @@ impl UsageReader {
         let pattern = self.claude_dir.join("**").join("*.jsonl");
         let pattern_str = pattern.to_string_lossy();
 
-        let mut files: Vec<PathBuf> = glob(&pattern_str)
-            .expect("Failed to read glob pattern")
-            .filter_map(|entry| entry.ok())
-            .collect();
+        let mut files: Vec<PathBuf> = match glob(&pattern_str) {
+            Ok(paths) => paths.filter_map(|entry| entry.ok()).collect(),
+            Err(e) => {
+                eprintln!("Failed to read glob pattern: {}", e);
+                return Vec::new();
+            }
+        };
 
         // Sort by modification time (newest first)
         files.sort_by(|a, b| {

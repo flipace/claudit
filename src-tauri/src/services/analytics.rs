@@ -81,8 +81,11 @@ impl AnalyticsService {
 
     /// Check if cache needs refresh (older than 30 seconds)
     fn needs_refresh(&self) -> bool {
-        let last = self.last_refresh.read().unwrap();
-        match *last {
+        let last = match self.last_refresh.read() {
+            Ok(guard) => *guard,
+            Err(_) => return true, // If lock is poisoned, force refresh
+        };
+        match last {
             Some(time) => Utc::now() - time > Duration::seconds(30),
             None => true,
         }
@@ -196,8 +199,10 @@ impl AnalyticsService {
     /// Get current stats (uses cache if fresh)
     pub fn get_stats(&self) -> AnalyticsStats {
         if !self.needs_refresh() {
-            if let Some(stats) = self.cached_stats.read().unwrap().clone() {
-                return stats;
+            if let Ok(guard) = self.cached_stats.read() {
+                if let Some(stats) = guard.clone() {
+                    return stats;
+                }
             }
         }
 
@@ -209,8 +214,13 @@ impl AnalyticsService {
         let entries = self.usage_reader.read_all_entries();
         let stats = self.calculate_stats(&entries);
 
-        *self.cached_stats.write().unwrap() = Some(stats.clone());
-        *self.last_refresh.write().unwrap() = Some(Utc::now());
+        // Update cache, ignoring poisoned lock errors
+        if let Ok(mut guard) = self.cached_stats.write() {
+            *guard = Some(stats.clone());
+        }
+        if let Ok(mut guard) = self.last_refresh.write() {
+            *guard = Some(Utc::now());
+        }
 
         stats
     }

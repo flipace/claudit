@@ -66,14 +66,10 @@ impl HookServer {
 
         // Try to bind to the specified port, incrementing if busy
         let mut port = self.port;
-        let addr = loop {
+        let listener = loop {
             let addr = SocketAddr::from(([127, 0, 0, 1], port));
             match tokio::net::TcpListener::bind(addr).await {
-                Ok(listener) => {
-                    // Port is available, but we need to close it and let axum bind
-                    drop(listener);
-                    break addr;
-                }
+                Ok(listener) => break listener,
                 Err(_) => {
                     port += 1;
                     if port > self.port + 10 {
@@ -87,15 +83,16 @@ impl HookServer {
         self.shutdown_tx = Some(shutdown_tx);
         self.port = port;
 
-        // Spawn the server
+        // Spawn the server with proper error handling (no unwrap)
         tokio::spawn(async move {
-            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-            axum::serve(listener, app)
+            if let Err(e) = axum::serve(listener, app)
                 .with_graceful_shutdown(async {
                     let _ = shutdown_rx.await;
                 })
                 .await
-                .unwrap();
+            {
+                eprintln!("Hook server error: {}", e);
+            }
         });
 
         Ok(port)
