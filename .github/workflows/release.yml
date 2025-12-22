@@ -53,15 +53,14 @@ jobs:
         run: pnpm install
 
       - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: 'Claudit v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+        run: pnpm tauri build
+
+      - name: List built artifacts
+        run: |
+          echo "=== AppImage files ==="
+          ls -la src-tauri/target/release/bundle/appimage/ || true
+          echo "=== DEB files ==="
+          ls -la src-tauri/target/release/bundle/deb/ || true
 
       - name: Upload artifacts to MinIO
         env:
@@ -111,15 +110,15 @@ jobs:
         run: pnpm install
 
       - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: 'Claudit v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+        run: pnpm tauri build
+
+      - name: List built artifacts
+        shell: bash
+        run: |
+          echo "=== MSI files ==="
+          ls -la src-tauri/target/release/bundle/msi/ || true
+          echo "=== NSIS files ==="
+          ls -la src-tauri/target/release/bundle/nsis/ || true
 
       - name: Upload artifacts to MinIO
         env:
