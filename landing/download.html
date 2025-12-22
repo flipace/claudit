@@ -74,13 +74,15 @@
       border-radius: 8px;
     }
 
-    .back-link {
-      display: flex; align-items: center; gap: 6px;
-      color: var(--text-secondary);
-      text-decoration: none; font-size: 14px;
-      transition: color 0.2s;
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: var(--text-secondary); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      padding: 8px 16px; border-radius: 8px;
+      transition: all 0.2s ease;
     }
-    .back-link:hover { color: var(--text-primary); }
+    .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: var(--text-primary); }
 
     main { padding: 40px 0 80px; position: relative; z-index: 10; }
 
@@ -203,12 +205,10 @@
     <div class="container">
       <div class="header-content">
         <a href="/" class="logo"><img class="logo-icon" src="icon.png" alt="Claudit"> Claudit</a>
-        <div style="display: flex; align-items: center; gap: 24px;">
-          <a href="/changelog.html" class="back-link" style="margin-right: 0;">Changelog</a>
-          <a href="/" class="back-link">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back to home
-          </a>
+        <div class="nav-links">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/download.html" class="nav-link active">Download</a>
+          <a href="/changelog.html" class="nav-link">Changelog</a>
         </div>
       </div>
     </div>

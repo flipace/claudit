@@ -92,6 +92,7 @@
       transition: all 0.2s ease;
     }
     .nav-link:hover { color: var(--text-primary); background: var(--bg-elevated); }
+    .nav-link.active { color: var(--text-primary); }
 
     .hero { padding: 60px 0 80px; position: relative; z-index: 10; }
     .hero-content { max-width: 680px; }
@@ -267,8 +268,9 @@
       <div class="header-content">
         <a href="/" class="logo"><img class="logo-icon" src="icon.png" alt="Claudit"> Claudit</a>
         <div class="nav-links">
-          <a href="/changelog.html" class="nav-link">Changelog</a>
+          <a href="/" class="nav-link active">Home</a>
           <a href="/download.html" class="nav-link">Download</a>
+          <a href="/changelog.html" class="nav-link">Changelog</a>
         </div>
       </div>
     </div>
