@@ -1,6 +1,6 @@
 # Claudit - Claude Code Usage Monitor
 
-A native macOS menu bar application that provides real-time usage analytics for Claude Code.
+A native desktop application that provides real-time usage analytics for Claude Code. Available for macOS, Windows, and Linux.
 
 ## Tech Stack
 
@@ -137,3 +137,20 @@ Each line in the JSONL files has this structure:
 - Use `cn()` for conditional classnames
 - Keep components simple and composable
 - Glassy/frosted look: `bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50`
+
+## Release Checklist
+
+**IMPORTANT: Always update ALL changelogs when releasing a new version!**
+
+1. Update version in:
+   - `package.json`
+   - `src-tauri/Cargo.toml`
+   - `src-tauri/tauri.conf.json`
+
+2. Update changelogs:
+   - `CHANGELOG.md` (project root)
+   - `landing/changelog.html` (landing page - add new release section)
+
+3. Commit with message: `Release vX.Y.Z`
+
+4. Create and push git tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
