@@ -3,13 +3,17 @@ import { isTauri } from "./lib/tauri";
 import type { Window } from "@tauri-apps/api/window";
 import { Dashboard } from "./domains/analytics";
 import { Settings } from "./domains/settings";
+import { ConfigPage } from "./domains/config";
+import { AgentsPage } from "./domains/agents";
+import { PluginsPage } from "./domains/plugins";
+import { ProjectsPage } from "./domains/projects";
+import { AnalysisPage } from "./domains/analysis";
+import { BackupPage } from "./domains/backup";
+import { Sidebar, type Page } from "./components/Sidebar";
 import { WindowControls } from "./components/WindowControls";
-import { BarChart3, Settings as SettingsIcon } from "lucide-react";
-
-type Tab = "analytics" | "settings";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("analytics");
+  const [activePage, setActivePage] = useState<Page>("analytics");
   const tauriWindowRef = useRef<Window | null>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -56,54 +60,51 @@ function App() {
     return () => header.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
+  const renderPage = () => {
+    switch (activePage) {
+      case "analytics":
+        return <Dashboard />;
+      case "settings":
+        return <Settings />;
+      case "config":
+        return <ConfigPage />;
+      case "agents":
+        return <AgentsPage />;
+      case "plugins":
+        return <PluginsPage />;
+      case "projects":
+        return <ProjectsPage />;
+      case "analysis":
+        return <AnalysisPage />;
+      case "backup":
+        return <BackupPage />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
     <div
-      className={`min-h-screen bg-background flex flex-col ${isTauri() ? "rounded-xl overflow-hidden" : ""}`}
+      className={`h-screen bg-background flex ${isTauri() ? "rounded-xl overflow-hidden" : ""}`}
     >
-      {/* Header - draggable in Tauri */}
-      <header
-        ref={headerRef}
-        className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur ${isTauri() ? "cursor-default select-none" : ""}`}
-      >
-        <div className="flex h-12 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            {isTauri() && <WindowControls />}
-            <div className="flex items-center gap-2">
-              <img src="/icon.png" alt="Claudit" className="w-6 h-6 rounded" />
-              <h1 className="font-semibold text-foreground">Claudit</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab("analytics")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
-                activeTab === "analytics"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <BarChart3 size={14} />
-              Analytics
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
-                activeTab === "settings"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <SettingsIcon size={14} />
-              Settings
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Sidebar */}
+      <Sidebar activePage={activePage} onPageChange={setActivePage} />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        {activeTab === "analytics" ? <Dashboard /> : <Settings />}
-      </main>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header - draggable in Tauri */}
+        <header
+          ref={headerRef}
+          className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur ${isTauri() ? "cursor-default select-none" : ""}`}
+        >
+          <div className="flex h-10 items-center justify-end px-4">
+            {isTauri() && <WindowControls />}
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">{renderPage()}</main>
+      </div>
     </div>
   );
 }

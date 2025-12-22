@@ -16,17 +16,17 @@ import {
   Clock,
   TrendingUp,
   Bell,
-  Check,
 } from "lucide-react";
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) {
     return `${(n / 1_000_000).toFixed(1)}M`;
   }
-  if (n >= 1_000) {
+  if (n >= 10_000) {
     return `${(n / 1_000).toFixed(1)}K`;
   }
-  return n.toString();
+  // Use locale string for thousand separators
+  return n.toLocaleString();
 }
 
 function formatCost(n: number): string {
@@ -119,14 +119,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {hooksInstalled === true && (
-        <div className="mb-6 p-3 bg-emerald-950/20 border border-emerald-800/30 rounded-lg">
-          <div className="flex items-center gap-2 text-emerald-400">
-            <Check size={16} />
-            <span className="text-sm">Claude Code hooks installed - notifications enabled</span>
-          </div>
-        </div>
-      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">

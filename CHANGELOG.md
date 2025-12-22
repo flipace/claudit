@@ -2,6 +2,24 @@
 
 All notable changes to Claudit will be documented in this file.
 
+## [0.3.0] - 2025-12-22
+
+### Added
+- **Projects Page**: Browse all Claude Code projects with usage stats, costs, and last used dates
+- **AI Suggestions**: Get Claude-powered suggestions to improve project workflow (custom agents, commands, CLAUDE.md improvements, MCP recommendations)
+- **Project Details**: View CLAUDE.md content, project-specific commands, and MCP servers for each project
+- **Project Images**: Set custom images for projects
+- **Agents Page**: Browse global and project-specific Claude agents with content preview
+- **Plugins Page**: Browse installed Claude plugins with marketplace info
+- **Config Page**: View and explore Claude configuration
+- **Analysis Page**: Deep usage analysis with patterns
+- **Backup Page**: Backup and export Claude configuration
+- **Sidebar Navigation**: New collapsible sidebar with all app sections
+- **Markdown Viewer**: Render CLAUDE.md and agent files with syntax highlighting
+
+### Fixed
+- AI suggestions now display immediately after generation (fixed race condition)
+
 ## [0.2.0] - 2025-12-22
 
 ### Added

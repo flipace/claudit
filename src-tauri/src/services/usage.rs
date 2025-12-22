@@ -148,6 +148,71 @@ impl UsageReader {
     pub fn read_all_entries(&self) -> Vec<UsageEntry> {
         self.read_entries(None)
     }
+
+    /// Get the latest assistant text response (for notifications)
+    /// Returns an excerpt of the most recent assistant message's text content
+    pub fn get_latest_response(&self, max_chars: usize) -> Option<String> {
+        let files = self.find_jsonl_files();
+
+        // Check the most recently modified files first
+        for file_path in files.iter().take(5) {
+            let file = match File::open(file_path) {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+
+            let reader = BufReader::new(file);
+            let lines: Vec<String> = reader.lines().filter_map(|l| l.ok()).collect();
+
+            // Read from the end to find the latest assistant message with text
+            for line in lines.iter().rev() {
+                if line.trim().is_empty() {
+                    continue;
+                }
+
+                if let Ok(raw) = serde_json::from_str::<RawLogEntry>(line) {
+                    // Only process assistant messages
+                    if raw.entry_type.as_deref() != Some("assistant") {
+                        continue;
+                    }
+
+                    if let Some(message) = raw.message {
+                        if message.role.as_deref() != Some("assistant") {
+                            continue;
+                        }
+
+                        // Extract text content
+                        if let Some(content) = message.content {
+                            let text_parts: Vec<&str> = content
+                                .iter()
+                                .filter_map(|block| block.as_text())
+                                .collect();
+
+                            if !text_parts.is_empty() {
+                                let full_text = text_parts.join(" ");
+                                let trimmed = full_text.trim();
+
+                                if trimmed.is_empty() {
+                                    continue;
+                                }
+
+                                // Truncate to max_chars with ellipsis
+                                let excerpt = if trimmed.len() > max_chars {
+                                    format!("{}...", &trimmed[..max_chars])
+                                } else {
+                                    trimmed.to_string()
+                                };
+
+                                return Some(excerpt);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
 }
 
 impl Default for UsageReader {

@@ -21,6 +21,46 @@ pub struct MessageData {
     pub role: Option<String>,
     pub model: Option<String>,
     pub usage: Option<UsageData>,
+    pub content: Option<Vec<ContentBlock>>,
+}
+
+/// Content block in assistant message (text, thinking, tool_use, etc.)
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum ContentBlock {
+    Text {
+        #[serde(rename = "type")]
+        block_type: String,
+        text: String,
+    },
+    Thinking {
+        #[serde(rename = "type")]
+        block_type: String,
+        thinking: String,
+        #[serde(default)]
+        signature: Option<String>,
+    },
+    ToolUse {
+        #[serde(rename = "type")]
+        block_type: String,
+        id: Option<String>,
+        name: Option<String>,
+    },
+    Other {
+        #[serde(rename = "type")]
+        block_type: String,
+    },
+}
+
+impl ContentBlock {
+    /// Extract text content if this is a text block
+    pub fn as_text(&self) -> Option<&str> {
+        match self {
+            ContentBlock::Text { block_type, text } if block_type == "text" => Some(text),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

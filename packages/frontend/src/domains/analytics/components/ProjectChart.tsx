@@ -20,13 +20,26 @@ function formatNumber(n: number): string {
   if (n >= 1_000) {
     return `${(n / 1_000).toFixed(1)}K`;
   }
-  return n.toString();
+  return n.toLocaleString();
 }
 
-function shortenProjectName(name: string): string {
-  // Shorten hash-like names
-  if (name.length > 12 && !name.includes(" ")) {
-    return name.slice(0, 8) + "...";
+function getProjectFolderName(name: string): string {
+  // The analytics service returns folder names like "-Users-foo-project"
+  // Extract just the last segment (project name)
+  // e.g., "-Users-patrick-Development-myproject" -> "myproject"
+
+  // Handle encoded folder names (starting with -)
+  if (name.startsWith("-")) {
+    const parts = name.split("-").filter(Boolean);
+    if (parts.length > 0) {
+      return parts[parts.length - 1];
+    }
+  }
+
+  // Handle regular paths (shouldn't happen but fallback)
+  const parts = name.split("/").filter(Boolean);
+  if (parts.length > 0) {
+    return parts[parts.length - 1];
   }
   return name;
 }
@@ -34,7 +47,7 @@ function shortenProjectName(name: string): string {
 export function ProjectChart({ data }: ProjectChartProps) {
   const chartData = data.slice(0, 10).map((d) => ({
     ...d,
-    shortName: shortenProjectName(d.name),
+    shortName: getProjectFolderName(d.name),
   }));
 
   return (
@@ -67,7 +80,8 @@ export function ProjectChart({ data }: ProjectChartProps) {
                 border: "1px solid hsl(220 10% 16%)",
                 borderRadius: "8px",
               }}
-              formatter={(value: number) => formatNumber(value)}
+              formatter={(value: number) => [formatNumber(value), "Tokens"]}
+              labelFormatter={(label) => label}
             />
             <Bar
               dataKey="tokens"

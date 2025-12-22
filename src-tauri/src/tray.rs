@@ -147,7 +147,7 @@ fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, tauri::Err
     builder = builder.item(&MenuItem::with_id(
         app,
         "analytics",
-        "Open Analytics...",
+        "Open Claudit",
         true,
         Some("CmdOrCtrl+A"),
     )?);

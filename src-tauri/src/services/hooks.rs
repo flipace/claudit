@@ -1,4 +1,4 @@
-use crate::services::SettingsService;
+use crate::services::{SettingsService, UsageReader};
 use crate::types::HookEvent;
 use axum::{
     extract::State,
@@ -149,13 +149,20 @@ async fn handle_hook<R: Runtime>(
 
             if settings.notifications_enabled {
                 println!("Attempting to send notification...");
-                // Send system notification
+
+                // Get the latest response excerpt for the notification body
+                let reader = UsageReader::new();
+                let body = reader
+                    .get_latest_response(120)
+                    .unwrap_or_else(|| "Claude has finished responding".to_string());
+
+                // Send system notification with response excerpt
                 match state
                     .app_handle
                     .notification()
                     .builder()
                     .title("Claude Code")
-                    .body("Claude has finished responding")
+                    .body(&body)
                     .show()
                 {
                     Ok(_) => println!("Notification sent successfully"),

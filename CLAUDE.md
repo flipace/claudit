@@ -28,20 +28,28 @@ claudit/
 │   └── frontend/           # React frontend
 │       └── src/
 │           ├── domains/    # Feature-based organization
-│           │   ├── analytics/   # Charts, stats display
-│           │   ├── settings/    # Preferences UI
+│           │   ├── analytics/   # Dashboard with charts & stats
+│           │   ├── settings/    # App preferences UI
+│           │   ├── projects/    # Project browser & AI suggestions
+│           │   ├── agents/      # Claude agents browser
+│           │   ├── plugins/     # Claude plugins browser
+│           │   ├── config/      # Claude config viewer
+│           │   ├── analysis/    # Deep usage analysis
+│           │   ├── backup/      # Backup management
 │           │   └── shared/      # Shared components
-│           └── lib/        # Utilities
+│           ├── components/      # Reusable UI components
+│           └── lib/             # Utilities
 ├── src-tauri/              # Rust backend
 │   └── src/
 │       ├── services/       # Core services
 │       │   ├── usage.rs    # JSONL parsing
 │       │   ├── analytics.rs # Stats calculation
 │       │   ├── hooks.rs    # HTTP server for hooks
-│       │   └── settings.rs # Preferences
+│       │   ├── settings.rs # Preferences
+│       │   └── config.rs   # Claude config & project management
 │       ├── tray.rs         # System tray menu
 │       └── lib.rs          # Main entry
-└── landing/                # Landing page (optional)
+└── landing/                # Landing page
 ```
 
 ## Architecture
@@ -54,9 +62,73 @@ claudit/
 5. Analytics window shows interactive charts
 
 ### Hook System
-- HTTP server runs on localhost:3456
-- Receives events from Claude Code hooks (Stop, SubagentStop, PostToolUse)
-- Triggers notifications when Claude finishes responding
+
+Claudit runs an HTTP server on localhost:3456 that receives events from Claude Code hooks.
+
+**Supported Events:**
+
+| Event | Trigger | Purpose |
+|-------|---------|---------|
+| `Stop` | Claude finishes main response | Triggers notification |
+| `SubagentStop` | Subagent finishes | Triggers notification |
+| `PostToolUse` | After tool execution | Granular tracking (Bash only) |
+
+**API Endpoints:**
+
+```bash
+# Health check
+curl http://localhost:3456/
+# Response: {"status":"ok"}
+
+# Send hook event
+curl -X POST http://localhost:3456/hook \
+  -H "Content-Type: application/json" \
+  -d '{"event": "Stop"}'
+# Response: {"success":true}
+```
+
+**Payload Schema:**
+
+```typescript
+interface HookEvent {
+  event: "Stop" | "SubagentStop" | "PostToolUse" | "PreToolUse" | "UserPromptSubmit";
+  tool?: string;      // Tool name (for PostToolUse)
+  context?: string;   // Optional context
+  timestamp?: string; // ISO timestamp
+}
+```
+
+**Claude Code Settings Hook Config:**
+
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "curl -s -X POST http://localhost:3456/hook -H \"Content-Type: application/json\" -d '{\"event\": \"Stop\"}' > /dev/null 2>&1 &"
+      }]
+    }],
+    "SubagentStop": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "curl -s -X POST http://localhost:3456/hook -H \"Content-Type: application/json\" -d '{\"event\": \"SubagentStop\"}' > /dev/null 2>&1 &"
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "curl -s -X POST http://localhost:3456/hook -H \"Content-Type: application/json\" -d \"{\"event\": \"PostToolUse\", \"tool\": \"$CLAUDE_TOOL_NAME\"}\" > /dev/null 2>&1 &"
+      }]
+    }]
+  }
+}
+```
+
+**Port Fallback:** If port 3456 is busy, the server tries ports 3457-3466.
 
 ### Token Pricing (per 1M tokens)
 - claude-sonnet-4: $3 input, $15 output
@@ -65,12 +137,31 @@ claudit/
 
 ## Features
 
+### Core Analytics
 - Real-time token consumption in menu bar
 - Cost tracking with burn rate ($/hour)
 - 5-hour session block tracking
 - Per-project and per-model breakdowns
-- Analytics dashboard with 8 interactive charts
+- Analytics dashboard with interactive charts
 - Notifications when Claude finishes responding
+
+### Project Management
+- Browse all Claude Code projects with usage stats
+- View CLAUDE.md content with markdown rendering
+- Browse project-specific commands and MCP servers
+- **AI Suggestions**: Get Claude-powered suggestions to improve project workflow
+- Set custom project images
+- One-click open in Finder or editor
+
+### Configuration Browser
+- View and explore Claude config (~/.claude.json)
+- Browse installed agents (global and project-specific)
+- Browse installed plugins with marketplace info
+- Deep analysis of usage patterns
+
+### Backup & Export
+- Backup Claude configuration and history
+- Export usage data for analysis
 
 ## Key Patterns
 
@@ -131,6 +222,23 @@ Each line in the JSONL files has this structure:
 }
 ```
 
+### Project Folder Encoding
+
+Claude Code stores JSONL files in `~/.claude/projects/{encoded-path}/`. The encoding:
+- `/` is replaced with `-`
+- Literal `-` in paths are NOT escaped (encoding is lossy/ambiguous)
+
+Examples:
+- `/Users/foo/project` → `-Users-foo-project`
+- `/Users/foo-bar/project` → `-Users-foo-bar-project` (ambiguous with `/Users/foo/bar/project`)
+
+When matching project folders to paths from `~/.claude.json`, use `encode_path_to_folder()`:
+```rust
+fn encode_path_to_folder(path: &str) -> String {
+    path.replace('/', "-")
+}
+```
+
 ## Style Guide
 
 - Dark theme by default
@@ -154,3 +262,23 @@ Each line in the JSONL files has this structure:
 3. Commit with message: `Release vX.Y.Z`
 
 4. Create and push git tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+
+## Claude Code Allowed Tools
+
+Add these to your `~/.claude/settings.json` for faster Tauri development:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clean:*)",
+      "Bash(pnpm tauri dev:*)",
+      "Bash(pnpm tauri build:*)",
+      "Bash(pnpm --filter frontend tsc:*)"
+    ]
+  }
+}
+```
