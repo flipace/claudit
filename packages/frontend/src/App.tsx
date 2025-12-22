@@ -65,7 +65,10 @@ function App() {
         className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur ${isTauri() ? "cursor-default select-none" : ""}`}
       >
         <div className="flex h-12 items-center justify-between px-4">
-          <h1 className="font-semibold text-foreground">Claudit</h1>
+          <div className="flex items-center gap-2">
+            <img src="/icon.png" alt="Claudit" className="w-6 h-6 rounded" />
+            <h1 className="font-semibold text-foreground">Claudit</h1>
+          </div>
           <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
             <button
               onClick={() => setActiveTab("analytics")}
