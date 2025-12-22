@@ -85,6 +85,7 @@ export interface AppSettings {
   compact_mode: boolean;
   auto_start: boolean;
   hook_port: number;
+  claude_cli_path?: string;
 }
 
 // Hook events

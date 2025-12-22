@@ -262,6 +262,8 @@ pub struct AppSettings {
     pub compact_mode: bool,
     pub auto_start: bool,
     pub hook_port: u16,
+    #[serde(default)]
+    pub claude_cli_path: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -277,6 +279,7 @@ impl Default for AppSettings {
             compact_mode: false,
             auto_start: false,
             hook_port: 3456,
+            claude_cli_path: None,
         }
     }
 }

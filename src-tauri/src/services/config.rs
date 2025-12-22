@@ -1367,6 +1367,51 @@ pub struct ProjectSuggestion {
     pub project_path: String,
 }
 
+/// Find the claude CLI binary path
+/// Checks custom setting first, then common installation locations since bundled apps have limited PATH
+fn find_claude_cli() -> Option<PathBuf> {
+    // First check if user has set a custom path in Claudit settings
+    if let Some(custom_path) = get_custom_claude_cli_path() {
+        let path = PathBuf::from(&custom_path);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    let home = dirs::home_dir()?;
+
+    // Check common installation paths
+    let paths = [
+        home.join(".claude/local/claude"),           // Official Claude Code install location
+        home.join(".local/bin/claude"),              // Local bin
+        PathBuf::from("/usr/local/bin/claude"),      // Homebrew/npm global (Intel)
+        PathBuf::from("/opt/homebrew/bin/claude"),   // Homebrew (Apple Silicon)
+        home.join(".npm-global/bin/claude"),         // Custom npm prefix
+    ];
+
+    for path in paths {
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    // Fall back to just "claude" hoping it's in PATH
+    Some(PathBuf::from("claude"))
+}
+
+/// Get custom claude CLI path from Claudit settings
+fn get_custom_claude_cli_path() -> Option<String> {
+    use crate::types::AppSettings;
+
+    let config_dir = dirs::config_dir().or_else(dirs::home_dir)?;
+    let settings_path = config_dir.join("claudit").join("settings.json");
+
+    let contents = fs::read_to_string(&settings_path).ok()?;
+    let settings: AppSettings = serde_json::from_str(&contents).ok()?;
+
+    settings.claude_cli_path
+}
+
 /// Get project-specific suggestions by invoking Claude CLI
 pub async fn get_project_suggestions(project_path: &str) -> Result<ProjectSuggestion, String> {
     use std::process::Command;
@@ -1376,6 +1421,10 @@ pub async fn get_project_suggestions(project_path: &str) -> Result<ProjectSugges
     if !path.exists() {
         return Err(format!("Project path does not exist: {}", project_path));
     }
+
+    // Find the claude CLI
+    let claude_path = find_claude_cli()
+        .ok_or_else(|| "Could not find claude CLI. Make sure Claude Code is installed.".to_string())?;
 
     // Build the prompt for Claude
     let prompt = format!(
@@ -1392,14 +1441,14 @@ pub async fn get_project_suggestions(project_path: &str) -> Result<ProjectSugges
     );
 
     // Run claude CLI with --print flag for non-interactive output
-    let output = Command::new("claude")
+    let output = Command::new(&claude_path)
         .args([
             "--print",
             "-p", &prompt,
         ])
         .current_dir(project_path)
         .output()
-        .map_err(|e| format!("Failed to run claude CLI: {}. Make sure Claude Code is installed.", e))?;
+        .map_err(|e| format!("Failed to run claude CLI at {:?}: {}. Make sure Claude Code is installed.", claude_path, e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);

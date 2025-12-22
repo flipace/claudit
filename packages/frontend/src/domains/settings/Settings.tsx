@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSettings, useUpdateSettings, useHooksStatus, useInstallHooks, useHookPort } from "../analytics/hooks";
 import { invoke } from "@tauri-apps/api/core";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import { open } from "@tauri-apps/plugin-dialog";
 import type { AppSettings } from "../../types";
 import {
   Bell,
@@ -12,6 +13,8 @@ import {
   Eye,
   Zap,
   AlertCircle,
+  Terminal,
+  FolderOpen,
 } from "lucide-react";
 
 function Toggle({
@@ -188,7 +191,7 @@ export function Settings() {
           </div>
         </div>
 
-        <div className="py-4">
+        <div className="py-4 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-muted-foreground">
@@ -225,6 +228,70 @@ export function Settings() {
                   className="px-3 py-1.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-lg text-sm transition-colors disabled:opacity-50"
                 >
                   {installHooksMutation.isPending ? "Installing..." : "Install"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-muted-foreground">
+                <Terminal size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Claude CLI Path</p>
+                <p className="text-xs text-muted-foreground">
+                  {settings.claude_cli_path
+                    ? "Custom path configured"
+                    : "Auto-detected (default)"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={settings.claude_cli_path || ""}
+                onChange={(e) => {
+                  updateSettingsMutation.mutate({
+                    ...settings,
+                    claude_cli_path: e.target.value || undefined,
+                  });
+                }}
+                placeholder="Auto-detect"
+                className="w-48 px-2 py-1 text-xs bg-secondary/50 border border-border rounded text-foreground placeholder:text-muted-foreground/50"
+              />
+              <button
+                onClick={async () => {
+                  const selected = await open({
+                    multiple: false,
+                    directory: false,
+                    title: "Select Claude CLI Binary",
+                  });
+                  if (selected) {
+                    updateSettingsMutation.mutate({
+                      ...settings,
+                      claude_cli_path: selected as string,
+                    });
+                  }
+                }}
+                className="p-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded transition-colors"
+                title="Browse..."
+              >
+                <FolderOpen size={14} />
+              </button>
+              {settings.claude_cli_path && (
+                <button
+                  onClick={() => {
+                    updateSettingsMutation.mutate({
+                      ...settings,
+                      claude_cli_path: undefined,
+                    });
+                  }}
+                  className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded transition-colors"
+                >
+                  Reset
                 </button>
               )}
             </div>
