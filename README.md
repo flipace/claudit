@@ -4,7 +4,7 @@ A native desktop application that provides real-time usage analytics for Claude 
 
 > **Note:** Claudit was mostly coded by [Claude Code](https://claude.ai/claude-code) itself.
 
-![Claudit](https://claudit.dev/icon.png)
+![Claudit](claudit-screen.png)
 
 ## Features
 
