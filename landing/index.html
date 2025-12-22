@@ -122,7 +122,20 @@
 
     .hero-description {
       font-size: 18px; color: var(--text-secondary);
-      margin-bottom: 40px; max-width: 520px;
+      margin-bottom: 24px; max-width: 520px;
+    }
+
+    .hero-highlights {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 32px; max-width: 520px;
+    }
+    .hero-highlight {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: var(--text-secondary);
+    }
+    .hero-highlight-icon {
+      width: 20px; height: 20px; flex-shrink: 0;
+      color: var(--accent);
     }
 
     .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -185,12 +198,76 @@
     }
     .app-tab.active { background: var(--bg-elevated); color: var(--text-primary); }
 
-    .app-body { padding: 20px; min-height: 340px; }
+    .app-layout { display: flex; min-height: 340px; }
+    .app-sidebar {
+      width: 140px; padding: 12px 8px;
+      background: var(--bg-primary);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; font-size: 11px; font-weight: 500;
+      color: var(--text-muted); border-radius: 6px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .sidebar-item:hover { color: var(--text-secondary); background: var(--bg-elevated); }
+    .sidebar-item.active { color: var(--text-primary); background: var(--bg-elevated); }
+    .app-main { flex: 1; padding: 16px; overflow: hidden; }
+    .app-view.hidden { display: none; }
+    .sidebar-item span { margin-left: 6px; }
+
+    /* Projects View */
+    .projects-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .project-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .project-icon { font-size: 16px; }
+    .project-info { flex: 1; min-width: 0; }
+    .project-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .project-path { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .project-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .project-tokens, .project-cost { font-size: 9px; font-family: var(--font-mono); color: var(--text-muted); }
+    .project-cost { color: var(--accent); }
+    .ai-suggestion-box { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--accent-glow); border: 1px solid rgba(217,119,87,0.3); border-radius: 8px; }
+    .ai-icon { font-size: 16px; }
+    .ai-text { flex: 1; font-size: 11px; color: var(--text-secondary); }
+    .ai-btn { padding: 6px 12px; background: var(--accent); color: #0a0a0f; font-size: 10px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+
+    /* Agents View */
+    .agents-list { display: flex; flex-direction: column; gap: 8px; }
+    .agent-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .agent-icon { font-size: 16px; }
+    .agent-info { flex: 1; }
+    .agent-name { font-size: 12px; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
+    .agent-desc { font-size: 10px; color: var(--text-muted); }
+    .agent-badge { font-size: 9px; padding: 3px 8px; background: var(--bg-elevated); border-radius: 4px; color: var(--text-muted); }
+    .agent-badge.project { background: var(--accent-glow); color: var(--accent); }
+
+    /* Plugins View */
+    .plugins-list { display: flex; flex-direction: column; gap: 8px; }
+    .plugin-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .plugin-icon { font-size: 16px; }
+    .plugin-info { flex: 1; }
+    .plugin-name { font-size: 12px; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
+    .plugin-desc { font-size: 10px; color: var(--text-muted); }
+    .plugin-status { font-size: 9px; padding: 3px 8px; background: var(--bg-elevated); border-radius: 4px; color: var(--text-muted); }
+    .plugin-status.active { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+
+    /* Settings View */
+    .settings-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .setting-label { font-size: 11px; color: var(--text-primary); }
+    .setting-toggle { width: 32px; height: 18px; background: var(--bg-elevated); border-radius: 9px; position: relative; }
+    .setting-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--text-muted); border-radius: 50%; transition: all 0.2s; }
+    .setting-toggle.on { background: var(--accent); }
+    .setting-toggle.on::after { left: 16px; background: #0a0a0f; }
+    .hooks-section { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .hooks-title { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+    .hooks-btn { padding: 6px 12px; background: var(--accent); color: #0a0a0f; font-size: 10px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px; margin-bottom: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 16px;
     }
     .stat-card {
       background: var(--bg-card);
@@ -217,7 +294,7 @@
     }
 
     .features { padding: 80px 0; position: relative; z-index: 10; }
-    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .feature-card {
       padding: 28px;
       background: var(--bg-secondary);
@@ -248,7 +325,8 @@
     .hero-badge { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s; opacity: 0; }
     .hero h1 { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s; opacity: 0; }
     .hero-description { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.3s; opacity: 0; }
-    .hero-actions { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.4s; opacity: 0; }
+    .hero-highlights { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.35s; opacity: 0; }
+    .hero-actions { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.45s; opacity: 0; }
     .app-preview { animation: fadeInUp 0.8s ease forwards; animation-delay: 0.5s; opacity: 0; }
     .feature-card:nth-child(1) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.6s; opacity: 0; }
     .feature-card:nth-child(2) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.7s; opacity: 0; }
@@ -257,8 +335,9 @@
     .feature-card:nth-child(5) { animation: fadeInUp 0.6s ease forwards; animation-delay: 1.0s; opacity: 0; }
     .feature-card:nth-child(6) { animation: fadeInUp 0.6s ease forwards; animation-delay: 1.1s; opacity: 0; }
 
-    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 768px) { .hero { padding: 40px 0 60px; } .hero h1 { font-size: 28px; } .hero-description { font-size: 16px; } .features { padding: 60px 0; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 1000px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } .app-sidebar { width: 50px; } .sidebar-item span { display: none; } .sidebar-item { justify-content: center; padding: 10px; } }
+    @media (max-width: 768px) { .hero { padding: 40px 0 60px; } .hero h1 { font-size: 28px; } .hero-description { font-size: 16px; } .features { padding: 60px 0; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .app-sidebar { display: none; } .features-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -285,8 +364,26 @@
           <span class="hero-badge-dot"></span>
           <span id="hero-version">v0.1.0</span> — Now Available
         </div>
-        <h1>Monitor your<br><span class="accent">Claude Code</span> usage</h1>
-        <p class="hero-description">A native desktop app for tracking Claude Code usage. Monitor tokens, costs, burn rate, and get notified when Claude finishes responding.</p>
+        <h1>Your <span class="accent">Claude Code</span><br>command center</h1>
+        <p class="hero-description">Track usage, browse projects, and get AI-powered suggestions to improve your workflow. See exactly how many tokens you're burning, what it costs, and manage all your Claude Code projects in one place.</p>
+        <div class="hero-highlights">
+          <div class="hero-highlight">
+            <svg class="hero-highlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Live menu bar stats</strong> — tokens, costs, burn rate at a glance</span>
+          </div>
+          <div class="hero-highlight">
+            <svg class="hero-highlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Browse all projects</strong> — view CLAUDE.md, commands, MCP servers</span>
+          </div>
+          <div class="hero-highlight">
+            <svg class="hero-highlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>AI suggestions</strong> — get recommendations for agents, commands, workflow improvements</span>
+          </div>
+          <div class="hero-highlight">
+            <svg class="hero-highlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Smart notifications</strong> — know when Claude finishes responding</span>
+          </div>
+        </div>
         <div class="hero-actions">
           <a href="/download.html" class="btn-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -306,49 +403,69 @@
             </div>
             <div class="app-header">
               <div class="app-logo"><img class="app-logo-icon" src="icon.png" alt="Claudit"><span>Claudit</span></div>
-              <div class="app-tabs">
-                <button class="app-tab active"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Analytics</button>
-                <button class="app-tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Settings</button>
+            </div>
+          </div>
+          <div class="app-layout">
+            <div class="app-sidebar" id="app-sidebar">
+              <div class="sidebar-item active" data-view="analytics"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Analytics</span></div>
+              <div class="sidebar-item" data-view="projects"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Projects</span></div>
+              <div class="sidebar-item" data-view="agents"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg><span>Agents</span></div>
+              <div class="sidebar-item" data-view="plugins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 12v2m-6-8H2m20 0h-4M7.8 7.8 5 5m14 0-2.8 2.8M7.8 16.2 5 19m14 0-2.8-2.8"/></svg><span>Plugins</span></div>
+              <div class="sidebar-item" data-view="settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>Settings</span></div>
+            </div>
+            <div class="app-main">
+              <!-- Analytics View -->
+              <div class="app-view" id="view-analytics">
+                <div class="stats-grid">
+                  <div class="stat-card"><div class="stat-label">Messages Today</div><div class="stat-value">42</div><div class="stat-subtitle">1,284 total</div></div>
+                  <div class="stat-card"><div class="stat-label">Tokens Today</div><div class="stat-value">847K</div><div class="stat-subtitle">312K in / 535K out</div></div>
+                  <div class="stat-card"><div class="stat-label">Cost Today</div><div class="stat-value">$2.14</div><div class="stat-subtitle">$47.82 total</div></div>
+                  <div class="stat-card"><div class="stat-label">Burn Rate</div><div class="stat-value">142/min</div><div class="stat-subtitle">$0.28/hr</div></div>
+                  <div class="stat-card"><div class="stat-label">Sessions</div><div class="stat-value">8</div><div class="stat-subtitle">156 total</div></div>
+                  <div class="stat-card"><div class="stat-label">Cache Hit</div><div class="stat-value">23.4%</div><div class="stat-subtitle">1.2M cached</div></div>
+                </div>
+                <div class="charts-grid">
+                  <div class="chart-card"><div class="chart-title">Daily Token Usage</div><div class="chart-placeholder"><div class="chart-bar coral" style="height: 40%"></div><div class="chart-bar coral" style="height: 55%"></div><div class="chart-bar coral" style="height: 35%"></div><div class="chart-bar coral" style="height: 70%"></div><div class="chart-bar coral" style="height: 45%"></div><div class="chart-bar coral" style="height: 60%"></div><div class="chart-bar coral" style="height: 85%"></div></div></div>
+                  <div class="chart-card"><div class="chart-title">Daily Cost</div><div class="chart-placeholder"><div class="chart-bar purple" style="height: 30%"></div><div class="chart-bar purple" style="height: 45%"></div><div class="chart-bar purple" style="height: 25%"></div><div class="chart-bar purple" style="height: 60%"></div><div class="chart-bar purple" style="height: 40%"></div><div class="chart-bar purple" style="height: 55%"></div><div class="chart-bar purple" style="height: 75%"></div></div></div>
+                </div>
+              </div>
+              <!-- Projects View -->
+              <div class="app-view hidden" id="view-projects">
+                <div class="projects-list">
+                  <div class="project-item"><div class="project-icon">📁</div><div class="project-info"><div class="project-name">claudit</div><div class="project-path">~/Development/flipace/claudit</div></div><div class="project-stats"><span class="project-tokens">847K tokens</span><span class="project-cost">$2.14</span></div></div>
+                  <div class="project-item"><div class="project-icon">📁</div><div class="project-info"><div class="project-name">my-webapp</div><div class="project-path">~/Development/my-webapp</div></div><div class="project-stats"><span class="project-tokens">523K tokens</span><span class="project-cost">$1.32</span></div></div>
+                  <div class="project-item"><div class="project-icon">📁</div><div class="project-info"><div class="project-name">api-server</div><div class="project-path">~/Development/api-server</div></div><div class="project-stats"><span class="project-tokens">312K tokens</span><span class="project-cost">$0.78</span></div></div>
+                </div>
+                <div class="ai-suggestion-box"><div class="ai-icon">✨</div><div class="ai-text">Get AI suggestions to improve your workflow</div><button class="ai-btn">Generate</button></div>
+              </div>
+              <!-- Agents View -->
+              <div class="app-view hidden" id="view-agents">
+                <div class="agents-list">
+                  <div class="agent-item"><div class="agent-icon">🤖</div><div class="agent-info"><div class="agent-name">code-reviewer</div><div class="agent-desc">Reviews code for best practices</div></div><div class="agent-badge">Global</div></div>
+                  <div class="agent-item"><div class="agent-icon">🤖</div><div class="agent-info"><div class="agent-name">test-writer</div><div class="agent-desc">Generates unit tests</div></div><div class="agent-badge">Global</div></div>
+                  <div class="agent-item"><div class="agent-icon">🤖</div><div class="agent-info"><div class="agent-name">doc-generator</div><div class="agent-desc">Creates documentation</div></div><div class="agent-badge project">Project</div></div>
+                </div>
+              </div>
+              <!-- Plugins View -->
+              <div class="app-view hidden" id="view-plugins">
+                <div class="plugins-list">
+                  <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">filesystem</div><div class="plugin-desc">File operations MCP server</div></div><div class="plugin-status active">Active</div></div>
+                  <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">github</div><div class="plugin-desc">GitHub API integration</div></div><div class="plugin-status active">Active</div></div>
+                  <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">postgres</div><div class="plugin-desc">PostgreSQL database access</div></div><div class="plugin-status">Inactive</div></div>
+                </div>
+              </div>
+              <!-- Settings View -->
+              <div class="app-view hidden" id="view-settings">
+                <div class="settings-list">
+                  <div class="setting-item"><div class="setting-label">Notifications</div><div class="setting-toggle on"></div></div>
+                  <div class="setting-item"><div class="setting-label">Show in Menu Bar</div><div class="setting-toggle on"></div></div>
+                  <div class="setting-item"><div class="setting-label">Auto-refresh (30s)</div><div class="setting-toggle on"></div></div>
+                  <div class="setting-item"><div class="setting-label">Show Cost in Tray</div><div class="setting-toggle"></div></div>
+                </div>
+                <div class="hooks-section"><div class="hooks-title">Claude Code Hooks</div><button class="hooks-btn">Install Hooks</button></div>
               </div>
             </div>
           </div>
-          <div class="app-body">
-            <div class="stats-grid">
-              <div class="stat-card"><div class="stat-label">Messages Today</div><div class="stat-value">42</div><div class="stat-subtitle">1,284 total</div></div>
-              <div class="stat-card"><div class="stat-label">Tokens Today</div><div class="stat-value">847K</div><div class="stat-subtitle">312K in / 535K out</div></div>
-              <div class="stat-card"><div class="stat-label">Cost Today</div><div class="stat-value">$2.14</div><div class="stat-subtitle">$47.82 total</div></div>
-              <div class="stat-card"><div class="stat-label">Burn Rate</div><div class="stat-value">142/min</div><div class="stat-subtitle">$0.28/hr</div></div>
-              <div class="stat-card"><div class="stat-label">Sessions Today</div><div class="stat-value">8</div><div class="stat-subtitle">156 total</div></div>
-              <div class="stat-card"><div class="stat-label">Cache Hit Rate</div><div class="stat-value">23.4%</div><div class="stat-subtitle">1.2M cached</div></div>
-            </div>
-            <div class="charts-grid">
-              <div class="chart-card">
-                <div class="chart-title">Daily Token Usage</div>
-                <div class="chart-placeholder">
-                  <div class="chart-bar coral" style="height: 40%"></div>
-                  <div class="chart-bar coral" style="height: 55%"></div>
-                  <div class="chart-bar coral" style="height: 35%"></div>
-                  <div class="chart-bar coral" style="height: 70%"></div>
-                  <div class="chart-bar coral" style="height: 45%"></div>
-                  <div class="chart-bar coral" style="height: 60%"></div>
-                  <div class="chart-bar coral" style="height: 85%"></div>
-                </div>
-              </div>
-              <div class="chart-card">
-                <div class="chart-title">Daily Cost</div>
-                <div class="chart-placeholder">
-                  <div class="chart-bar purple" style="height: 30%"></div>
-                  <div class="chart-bar purple" style="height: 45%"></div>
-                  <div class="chart-bar purple" style="height: 25%"></div>
-                  <div class="chart-bar purple" style="height: 60%"></div>
-                  <div class="chart-bar purple" style="height: 40%"></div>
-                  <div class="chart-bar purple" style="height: 55%"></div>
-                  <div class="chart-bar purple" style="height: 75%"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="app-footer">Last updated: just now</div>
         </div>
       </div>
     </div>
@@ -377,6 +494,7 @@
   </footer>
 
   <script>
+    // Fetch latest version
     (async function() {
       const MINIO_URL = 'https://claudit-minio.cloud.neschkudla.at/claudit-releases';
       try {
@@ -400,6 +518,20 @@
         }
       } catch (e) { /* fallback to hardcoded version */ }
     })();
+
+    // Interactive sidebar
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('click', () => {
+        // Update active sidebar item
+        document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        // Show corresponding view
+        const viewId = item.getAttribute('data-view');
+        document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
+        document.getElementById('view-' + viewId).classList.remove('hidden');
+      });
+    });
   </script>
 </body>
 </html>
