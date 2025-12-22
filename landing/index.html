@@ -264,6 +264,32 @@
     .hooks-title { font-size: 11px; font-weight: 600; color: var(--text-primary); }
     .hooks-btn { padding: 6px 12px; background: var(--accent); color: #0a0a0f; font-size: 10px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
 
+    /* Config View */
+    .config-preview { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .config-header { padding: 8px 12px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
+    .config-content { padding: 10px 12px; }
+    .config-line { font-size: 10px; color: var(--text-secondary); line-height: 1.8; font-family: var(--font-mono); }
+    .config-comment { color: var(--accent); }
+    .config-line code { background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 9px; }
+
+    /* Analysis View */
+    .analysis-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .analysis-card { padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; text-align: center; }
+    .analysis-label { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; }
+    .analysis-value { font-size: 14px; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
+    .analysis-insight { display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; }
+    .insight-icon { font-size: 16px; }
+    .insight-text { font-size: 11px; color: var(--text-secondary); }
+
+    /* Backup View */
+    .backup-options { display: flex; flex-direction: column; gap: 8px; }
+    .backup-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+    .backup-icon { font-size: 16px; }
+    .backup-info { flex: 1; }
+    .backup-name { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+    .backup-desc { font-size: 9px; color: var(--text-muted); }
+    .backup-btn { padding: 5px 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); font-size: 9px; font-weight: 500; border-radius: 4px; cursor: pointer; }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -408,9 +434,12 @@
           <div class="app-layout">
             <div class="app-sidebar" id="app-sidebar">
               <div class="sidebar-item active" data-view="analytics"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Analytics</span></div>
-              <div class="sidebar-item" data-view="projects"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Projects</span></div>
-              <div class="sidebar-item" data-view="agents"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg><span>Agents</span></div>
+              <div class="sidebar-item" data-view="config"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>CLAUDE.md</span></div>
+              <div class="sidebar-item" data-view="agents"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="3"/></svg><span>Agents</span></div>
               <div class="sidebar-item" data-view="plugins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 12v2m-6-8H2m20 0h-4M7.8 7.8 5 5m14 0-2.8 2.8M7.8 16.2 5 19m14 0-2.8-2.8"/></svg><span>Plugins</span></div>
+              <div class="sidebar-item" data-view="projects"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Projects</span></div>
+              <div class="sidebar-item" data-view="analysis"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Analysis</span></div>
+              <div class="sidebar-item" data-view="backup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Backup</span></div>
               <div class="sidebar-item" data-view="settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>Settings</span></div>
             </div>
             <div class="app-main">
@@ -438,6 +467,21 @@
                 </div>
                 <div class="ai-suggestion-box"><div class="ai-icon">✨</div><div class="ai-text">Get AI suggestions to improve your workflow</div><button class="ai-btn">Generate</button></div>
               </div>
+              <!-- Config View -->
+              <div class="app-view hidden" id="view-config">
+                <div class="config-preview">
+                  <div class="config-header"># CLAUDE.md</div>
+                  <div class="config-content">
+                    <div class="config-line"><span class="config-comment"># Project: claudit</span></div>
+                    <div class="config-line"><span class="config-comment">## Tech Stack</span></div>
+                    <div class="config-line">- Tauri 2 (Rust + React)</div>
+                    <div class="config-line">- TypeScript, Tailwind</div>
+                    <div class="config-line"><span class="config-comment">## Commands</span></div>
+                    <div class="config-line"><code>pnpm dev</code> - Development</div>
+                    <div class="config-line"><code>pnpm build</code> - Production</div>
+                  </div>
+                </div>
+              </div>
               <!-- Agents View -->
               <div class="app-view hidden" id="view-agents">
                 <div class="agents-list">
@@ -452,6 +496,23 @@
                   <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">filesystem</div><div class="plugin-desc">File operations MCP server</div></div><div class="plugin-status active">Active</div></div>
                   <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">github</div><div class="plugin-desc">GitHub API integration</div></div><div class="plugin-status active">Active</div></div>
                   <div class="plugin-item"><div class="plugin-icon">🔌</div><div class="plugin-info"><div class="plugin-name">postgres</div><div class="plugin-desc">PostgreSQL database access</div></div><div class="plugin-status">Inactive</div></div>
+                </div>
+              </div>
+              <!-- Analysis View -->
+              <div class="app-view hidden" id="view-analysis">
+                <div class="analysis-stats">
+                  <div class="analysis-card"><div class="analysis-label">Most Active Day</div><div class="analysis-value">Tuesday</div></div>
+                  <div class="analysis-card"><div class="analysis-label">Peak Hours</div><div class="analysis-value">2-4 PM</div></div>
+                  <div class="analysis-card"><div class="analysis-label">Avg Session</div><div class="analysis-value">47 min</div></div>
+                </div>
+                <div class="analysis-insight"><div class="insight-icon">💡</div><div class="insight-text">You use 40% more tokens on Tuesdays. Consider batching complex tasks.</div></div>
+              </div>
+              <!-- Backup View -->
+              <div class="app-view hidden" id="view-backup">
+                <div class="backup-options">
+                  <div class="backup-item"><div class="backup-icon">📦</div><div class="backup-info"><div class="backup-name">Full Backup</div><div class="backup-desc">Config, history, and settings</div></div><button class="backup-btn">Export</button></div>
+                  <div class="backup-item"><div class="backup-icon">⚙️</div><div class="backup-info"><div class="backup-name">Config Only</div><div class="backup-desc">CLAUDE.md and settings</div></div><button class="backup-btn">Export</button></div>
+                  <div class="backup-item"><div class="backup-icon">📊</div><div class="backup-info"><div class="backup-name">Usage Data</div><div class="backup-desc">Token and cost history</div></div><button class="backup-btn">Export</button></div>
                 </div>
               </div>
               <!-- Settings View -->
