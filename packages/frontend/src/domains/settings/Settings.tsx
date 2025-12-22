@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSettings, useUpdateSettings, useHooksStatus, useInstallHooks, useHookPort } from "../analytics/hooks";
 import { invoke } from "@tauri-apps/api/core";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import type { AppSettings } from "../../types";
 import {
   Bell,
@@ -10,6 +11,7 @@ import {
   Webhook,
   Eye,
   Zap,
+  AlertCircle,
 } from "lucide-react";
 
 function Toggle({
@@ -90,6 +92,33 @@ export function Settings() {
   const { data: hookPort } = useHookPort();
   const installHooksMutation = useInstallHooks();
   const [uninstalling, setUninstalling] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<boolean | null>(null);
+  const [requestingPermission, setRequestingPermission] = useState(false);
+
+  // Check notification permission on mount
+  useEffect(() => {
+    isPermissionGranted().then(setNotificationPermission);
+  }, []);
+
+  const handleRequestPermission = async () => {
+    setRequestingPermission(true);
+    try {
+      const permission = await requestPermission();
+      setNotificationPermission(permission === "granted");
+      if (permission === "granted") {
+        // Send a test notification
+        sendNotification({ title: "Claudit", body: "Notifications enabled!" });
+      }
+    } catch (e) {
+      console.error("Failed to request permission:", e);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleTestNotification = () => {
+    sendNotification({ title: "Claudit Test", body: "This is a test notification" });
+  };
 
   const handleToggle = (key: keyof AppSettings, value: boolean) => {
     if (!settings) return;
@@ -200,6 +229,49 @@ export function Settings() {
 
       {/* Notifications */}
       <SettingSection title="Notifications">
+        {/* Permission Status */}
+        <div className="py-4 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-muted-foreground">
+                {notificationPermission ? (
+                  <Check size={20} className="text-primary" />
+                ) : (
+                  <AlertCircle size={20} className="text-amber-500" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">System Permission</p>
+                <p className="text-xs text-muted-foreground">
+                  {notificationPermission === null
+                    ? "Checking permission..."
+                    : notificationPermission
+                    ? "Permission granted"
+                    : "Permission required for notifications"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {notificationPermission ? (
+                <button
+                  onClick={handleTestNotification}
+                  className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg text-sm transition-colors"
+                >
+                  Test
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequestPermission}
+                  disabled={requestingPermission}
+                  className="px-3 py-1.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-lg text-sm transition-colors disabled:opacity-50"
+                >
+                  {requestingPermission ? "Requesting..." : "Grant Permission"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <SettingRow
           icon={<Bell size={20} />}
           title="Enable Notifications"
@@ -208,7 +280,7 @@ export function Settings() {
           <Toggle
             enabled={settings.notifications_enabled}
             onChange={(v) => handleToggle("notifications_enabled", v)}
-            disabled={!hooksInstalled}
+            disabled={!hooksInstalled || !notificationPermission}
           />
         </SettingRow>
       </SettingSection>
