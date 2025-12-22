@@ -2,7 +2,7 @@
 
 All notable changes to Claudit will be documented in this file.
 
-## [0.2.0] - 2024-12-22
+## [0.2.0] - 2025-12-22
 
 ### Added
 - Close button (X) in header to minimize to tray
@@ -17,7 +17,7 @@ All notable changes to Claudit will be documented in this file.
 ### Changed
 - Regenerated icon.ico from correct PNG sources
 
-## [0.1.0] - 2024-12-21
+## [0.1.0] - 2025-12-21
 
 ### Added
 - Initial release
