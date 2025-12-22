@@ -1,7 +1,7 @@
 {
   "name": "claudit",
   "version": "0.3.0",
-  "description": "Claude Code usage monitor with analytics dashboard",
+  "description": "A native desktop app for real-time Claude Code usage analytics",
   "author": "flipace <neschkudla@gmail.com>",
   "license": "UNLICENSED",
   "private": true,
