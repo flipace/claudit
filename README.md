@@ -23,7 +23,7 @@ A native desktop application that provides real-time usage analytics for Claude 
 
 **Currently available for macOS only.**
 
-Get the latest release from [claudit.dev/download](https://claudit.dev/download.html).
+Get the latest release from [claudit.cloud.neschkudla.at](https://claudit.cloud.neschkudla.at/download.html).
 
 ## Tech Stack
 
@@ -79,7 +79,7 @@ claudit/
 │       │   └── config.rs   # Claude config & project management
 │       ├── tray.rs         # System tray menu
 │       └── lib.rs          # Main entry & Tauri commands
-├── landing/                # Landing page (claudit.dev)
+├── landing/                # Landing page (claudit.cloud.neschkudla.at)
 └── scripts/                # Build utilities
 ```
 
@@ -105,7 +105,7 @@ curl -X POST http://localhost:3456/hook \
   -d '{"event": "Stop"}'
 ```
 
-See the [landing page](https://claudit.dev) for hook configuration instructions.
+See the [landing page](https://claudit.cloud.neschkudla.at) for hook configuration instructions.
 
 ## License
 

@@ -51,7 +51,7 @@ claudit/
 │       │   └── config.rs   # Claude config & project management
 │       ├── tray.rs         # System tray menu
 │       └── lib.rs          # Main entry & Tauri commands
-├── landing/                # Landing page (claudit.dev)
+├── landing/                # Landing page (claudit.cloud.neschkudla.at)
 └── scripts/                # Build utilities (icon generation, local release)
 ```
 
