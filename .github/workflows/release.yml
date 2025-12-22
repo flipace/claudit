@@ -71,6 +71,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install
+
+      - name: Debug - List built artifacts
+        run: |
+          echo "=== AppImage files ==="
+          ls -la src-tauri/target/release/bundle/appimage/ || echo "No appimage dir"
+          echo "=== DEB files ==="
+          ls -la src-tauri/target/release/bundle/deb/ || echo "No deb dir"
+
       - name: Upload to MinIO
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
@@ -115,6 +128,19 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install AWS CLI
+        run: |
+          msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet
+          echo "C:\Program Files\Amazon\AWSCLIV2" >> $env:GITHUB_PATH
+
+      - name: Debug - List built artifacts
+        shell: bash
+        run: |
+          echo "=== MSI files ==="
+          ls -la src-tauri/target/release/bundle/msi/ || echo "No msi dir"
+          echo "=== NSIS files ==="
+          ls -la src-tauri/target/release/bundle/nsis/ || echo "No nsis dir"
 
       - name: Upload to MinIO
         shell: bash
