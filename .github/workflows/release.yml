@@ -73,9 +73,13 @@ jobs:
 
       - name: Install AWS CLI
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip -q awscliv2.zip
-          sudo ./aws/install
+          if ! command -v aws &> /dev/null; then
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+          else
+            echo "AWS CLI already installed: $(aws --version)"
+          fi
 
       - name: Debug - List built artifacts
         run: |
@@ -130,32 +134,39 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install AWS CLI
+        shell: pwsh
         run: |
-          msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet
-          echo "C:\Program Files\Amazon\AWSCLIV2" >> $env:GITHUB_PATH
+          if (!(Get-Command aws -ErrorAction SilentlyContinue)) {
+            msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet
+            echo "C:\Program Files\Amazon\AWSCLIV2" >> $env:GITHUB_PATH
+          } else {
+            aws --version
+          }
 
       - name: Debug - List built artifacts
-        shell: bash
+        shell: pwsh
         run: |
-          echo "=== MSI files ==="
-          ls -la src-tauri/target/release/bundle/msi/ || echo "No msi dir"
-          echo "=== NSIS files ==="
-          ls -la src-tauri/target/release/bundle/nsis/ || echo "No nsis dir"
+          Write-Host "=== MSI files ==="
+          Get-ChildItem -Path "src-tauri\target\release\bundle\msi\" -ErrorAction SilentlyContinue | Format-Table
+          Write-Host "=== NSIS files ==="
+          Get-ChildItem -Path "src-tauri\target\release\bundle\nsis\" -ErrorAction SilentlyContinue | Format-Table
 
       - name: Upload to MinIO
-        shell: bash
+        shell: pwsh
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
           MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
           RELEASE_TAG: ${{ needs.create-release.outputs.release_tag }}
         run: |
-          BUCKET="s3://claudit-releases"
-
-          for file in src-tauri/target/release/bundle/msi/*.msi \
-                      src-tauri/target/release/bundle/nsis/*.exe; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file..."
-              aws --endpoint-url "$MINIO_ENDPOINT" s3 cp "$file" "$BUCKET/${RELEASE_TAG}/"
-            fi
-          done
+          $bucket = "s3://claudit-releases"
+          $files = @(
+            "src-tauri\target\release\bundle\msi\*.msi",
+            "src-tauri\target\release\bundle\nsis\*.exe"
+          )
+          foreach ($pattern in $files) {
+            Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | ForEach-Object {
+              Write-Host "Uploading $($_.FullName)..."
+              aws --endpoint-url $env:MINIO_ENDPOINT s3 cp $_.FullName "$bucket/$env:RELEASE_TAG/"
+            }
+          }
