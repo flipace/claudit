@@ -1,6 +1,8 @@
 # Claudit - Claude Code Usage Monitor
 
-A native desktop application that provides real-time usage analytics for Claude Code. Available for macOS, Windows, and Linux.
+A native desktop application that provides real-time usage analytics for Claude Code. Currently available for macOS only.
+
+> **Note:** This project was mostly coded by Claude Code itself.
 
 ## Tech Stack
 
@@ -48,8 +50,9 @@ claudit/
 │       │   ├── settings.rs # Preferences
 │       │   └── config.rs   # Claude config & project management
 │       ├── tray.rs         # System tray menu
-│       └── lib.rs          # Main entry
-└── landing/                # Landing page
+│       └── lib.rs          # Main entry & Tauri commands
+├── landing/                # Landing page (claudit.dev)
+└── scripts/                # Build utilities (icon generation, local release)
 ```
 
 ## Architecture

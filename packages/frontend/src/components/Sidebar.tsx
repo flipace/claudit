@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart3,
   Settings,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { getVersion } from "@tauri-apps/api/app";
 
 export type Page =
   | "analytics"
@@ -89,6 +90,11 @@ interface SidebarProps {
 
 export function Sidebar({ activePage, onPageChange }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [version, setVersion] = useState<string>("");
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => {});
+  }, []);
 
   return (
     <motion.aside
@@ -150,13 +156,28 @@ export function Sidebar({ activePage, onPageChange }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center p-3 border-t border-zinc-800/50 text-muted-foreground hover:text-foreground transition-colors"
-      >
-        {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-      </button>
+      {/* Version & Collapse Toggle */}
+      <div className="border-t border-zinc-800/50">
+        <AnimatePresence>
+          {!collapsed && version && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 py-2 text-xs text-muted-foreground overflow-hidden"
+            >
+              v{version}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full flex items-center justify-center p-3 text-muted-foreground hover:text-foreground transition-colors"
+          title={collapsed && version ? `v${version}` : undefined}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
+      </div>
     </motion.aside>
   );
 }

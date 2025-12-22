@@ -1,6 +1,29 @@
-# Claude Template - Tauri
+# Claudit
 
-A Tauri 2 desktop app template with React frontend, system tray support, and MinIO-based release distribution. Designed for fast project setup with Claude Code.
+A native desktop application that provides real-time usage analytics for Claude Code.
+
+> **Note:** Claudit was mostly coded by [Claude Code](https://claude.ai/claude-code) itself.
+
+![Claudit](https://claudit.dev/icon.png)
+
+## Features
+
+- **Real-time Analytics**: Token consumption and cost tracking in the menu bar
+- **Burn Rate**: See your $/hour spending rate
+- **Session Tracking**: 5-hour session block monitoring
+- **Project Insights**: Per-project and per-model breakdowns
+- **Interactive Dashboard**: 8 charts for deep usage analysis
+- **Notifications**: Get notified when Claude finishes responding
+- **Project Browser**: Browse all Claude Code projects with usage stats
+- **AI Suggestions**: Get Claude-powered suggestions to improve project workflow
+- **Configuration Browser**: View and manage Claude agents, commands, plugins, and MCP servers
+- **Backup & Export**: Backup your Claude configuration and history
+
+## Download
+
+**Currently available for macOS only.**
+
+Get the latest release from [claudit.dev/download](https://claudit.dev/download.html).
 
 ## Tech Stack
 
@@ -9,123 +32,85 @@ A Tauri 2 desktop app template with React frontend, system tray support, and Min
 | Framework | Tauri 2 (Rust + Webview) |
 | Frontend | React 18, Vite, TypeScript |
 | Styling | Tailwind CSS 3 |
+| Charts | Recharts |
 | Data Fetching | TanStack Query |
-| Animations | Framer Motion |
+| Animations | Motion |
 | Icons | Lucide React |
 | Distribution | GitHub Actions + MinIO |
 
-## Features
-
-- **System Tray**: App runs in background, accessible from menu bar
-- **Frameless Window**: Custom titlebar with drag support
-- **Auto-Updates**: Built-in Tauri updater support
-- **Landing Page**: Static site with dynamic download links from MinIO
-- **Cross-Platform**: Builds for macOS (Apple Silicon) and Windows
-
-## Quick Start
+## Development
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run in development mode
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 ```
 
 ## Project Structure
 
 ```
+claudit/
+├── packages/
+│   └── frontend/           # React frontend
+│       └── src/
+│           ├── domains/    # Feature-based organization
+│           │   ├── analytics/   # Dashboard with charts & stats
+│           │   ├── settings/    # App preferences UI
+│           │   ├── projects/    # Project browser & AI suggestions
+│           │   ├── agents/      # Claude agents browser
+│           │   ├── plugins/     # Claude plugins browser
+│           │   ├── config/      # Claude config viewer
+│           │   ├── analysis/    # Deep usage analysis
+│           │   └── backup/      # Backup management
+│           ├── components/      # Reusable UI components
+│           └── lib/             # Utilities
 ├── src-tauri/              # Rust backend
-│   ├── src/lib.rs          # Commands and setup
-│   ├── src/tray.rs         # System tray menu
-│   └── tauri.conf.json     # App configuration
-├── packages/frontend/      # React frontend
-│   ├── src/App.tsx         # Main component
-│   └── src/lib/tauri.ts    # Tauri detection helper
-├── landing/                # Static landing page
-│   ├── index.html          # Home page
-│   └── download.html       # Downloads (from MinIO)
-└── .github/workflows/
-    └── release.yml         # Build & upload to MinIO
+│   └── src/
+│       ├── services/       # Core services
+│       │   ├── usage.rs    # JSONL parsing
+│       │   ├── analytics.rs # Stats calculation
+│       │   ├── hooks.rs    # HTTP server for hooks
+│       │   ├── settings.rs # Preferences
+│       │   └── config.rs   # Claude config & project management
+│       ├── tray.rs         # System tray menu
+│       └── lib.rs          # Main entry & Tauri commands
+├── landing/                # Landing page (claudit.dev)
+└── scripts/                # Build utilities
 ```
 
-## Adding Tauri Commands
+## How It Works
 
-1. Define in `src-tauri/src/lib.rs`:
-```rust
-#[tauri::command]
-fn my_command(name: &str) -> String {
-    format!("Hello, {}!", name)
-}
-```
+1. Claude Code writes usage data to `~/.claude/projects/**/*.jsonl`
+2. Claudit parses JSONL files and deduplicates entries
+3. Analytics service calculates stats, costs, and burn rates
+4. System tray displays live stats (updates every 30s)
+5. Dashboard shows interactive charts and detailed breakdowns
 
-2. Register in invoke handler:
-```rust
-.invoke_handler(tauri::generate_handler![greet, my_command])
-```
+## Hook Integration
 
-3. Call from React:
-```typescript
-import { invoke } from "@tauri-apps/api/core";
-const result = await invoke<string>("my_command", { name: "World" });
-```
-
-## Customizing for Your App
-
-1. **App Identity**: Update `src-tauri/tauri.conf.json`:
-   - `productName`: Your app name
-   - `identifier`: Reverse domain (e.g., `com.example.myapp`)
-   - `windows[0].title`: Window title
-
-2. **Icons**: Replace icons in `src-tauri/icons/`
-   - Use `cargo tauri icon path/to/icon.png` to generate all sizes
-
-3. **System Tray**: Customize menu in `src-tauri/src/tray.rs`
-
-4. **Landing Page**: Update `landing/index.html` and `landing/download.html`
-
-## Release Process
-
-1. Bump version in:
-   - `package.json`
-   - `src-tauri/Cargo.toml`
-   - `src-tauri/tauri.conf.json`
-
-2. Tag and push:
-```bash
-git tag v0.1.0
-git push origin main --tags
-```
-
-3. GitHub Actions:
-   - Builds for macOS and Windows
-   - Uploads to MinIO
-   - Creates `latest.json` for download page
-
-## MinIO Setup
-
-1. Create bucket (e.g., `app-releases`)
-2. Set public read policy
-3. Add GitHub secrets:
-   - `MINIO_ACCESS_KEY`
-   - `MINIO_SECRET_KEY`
-4. Update workflow with your MinIO endpoint
-
-## Landing Page Deployment
-
-The `landing/` directory contains a static site deployable to any host:
+Claudit can receive events from Claude Code hooks for real-time notifications:
 
 ```bash
-# Build Docker image
-cd landing
-docker build -t myapp-landing .
+# Health check
+curl http://localhost:3456/
 
-# Or deploy to Coolify/nginx directly
+# Send hook event
+curl -X POST http://localhost:3456/hook \
+  -H "Content-Type: application/json" \
+  -d '{"event": "Stop"}'
 ```
+
+See the [landing page](https://claudit.dev) for hook configuration instructions.
+
+## License
+
+UNLICENSED - All rights reserved.
 
 ---
 
-Built for fast prototyping with Claude Code.
+Made by [@flipace](https://github.com/flipace) and [Claude Code](https://claude.ai)
