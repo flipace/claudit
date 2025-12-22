@@ -8,10 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "5.62.16",
     "@tauri-apps/api": "2.5.0",
     "@tauri-apps/plugin-notification": "2.2.1",
     "@tauri-apps/plugin-shell": "2.2.1",
-    "@tanstack/react-query": "5.62.16",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
@@ -23,6 +23,7 @@
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {
+    "@types/node": "^25.0.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",
