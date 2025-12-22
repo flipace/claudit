@@ -156,10 +156,29 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Keep app running when window is closed (minimize to tray)
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
-                api.prevent_close();
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    // Keep app running when window is closed (minimize to tray)
+                    let _ = window.hide();
+                    // Hide from dock on macOS
+                    #[cfg(target_os = "macos")]
+                    {
+                        use tauri::ActivationPolicy;
+                        let app = window.app_handle();
+                        let _ = app.set_activation_policy(ActivationPolicy::Accessory);
+                    }
+                    api.prevent_close();
+                }
+                tauri::WindowEvent::Focused(true) => {
+                    // Show in dock when window is focused
+                    #[cfg(target_os = "macos")]
+                    {
+                        use tauri::ActivationPolicy;
+                        let app = window.app_handle();
+                        let _ = app.set_activation_policy(ActivationPolicy::Regular);
+                    }
+                }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())

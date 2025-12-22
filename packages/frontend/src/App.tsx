@@ -3,6 +3,7 @@ import { isTauri } from "./lib/tauri";
 import type { Window } from "@tauri-apps/api/window";
 import { Dashboard } from "./domains/analytics";
 import { Settings } from "./domains/settings";
+import { WindowControls } from "./components/WindowControls";
 import { BarChart3, Settings as SettingsIcon } from "lucide-react";
 
 type Tab = "analytics" | "settings";
@@ -65,9 +66,12 @@ function App() {
         className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur ${isTauri() ? "cursor-default select-none" : ""}`}
       >
         <div className="flex h-12 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <img src="/icon.png" alt="Claudit" className="w-6 h-6 rounded" />
-            <h1 className="font-semibold text-foreground">Claudit</h1>
+          <div className="flex items-center gap-3">
+            {isTauri() && <WindowControls />}
+            <div className="flex items-center gap-2">
+              <img src="/icon.png" alt="Claudit" className="w-6 h-6 rounded" />
+              <h1 className="font-semibold text-foreground">Claudit</h1>
+            </div>
           </div>
           <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
             <button
