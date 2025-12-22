@@ -38,55 +38,35 @@
       line-height: 1.6;
     }
 
-    .nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 1rem 2rem;
-      background: rgba(15, 17, 23, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
+    .header-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-    .nav-content {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    header { padding: 24px 0; position: relative; z-index: 10; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; }
 
     .logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--accent);
-      text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 18px;
+      color: var(--text); text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
     }
 
-    .nav-links {
-      display: flex;
-      gap: 2rem;
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      padding: 8px 16px; border-radius: 8px;
+      transition: all 0.2s ease;
     }
-
-    .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover,
-    .nav-links a.active {
-      color: var(--text);
-    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: var(--text); }
 
     .container {
       max-width: 800px;
       margin: 0 auto;
-      padding: 8rem 2rem 4rem;
+      padding: 2rem 2rem 4rem;
     }
 
     .header {
@@ -241,10 +221,6 @@
     }
 
     @media (max-width: 640px) {
-      .nav-links {
-        gap: 1rem;
-      }
-
       .header h1 {
         font-size: 2rem;
       }
@@ -258,16 +234,18 @@
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-content">
-      <a href="index.html" class="logo">claudit</a>
-      <div class="nav-links">
-        <a href="index.html">Home</a>
-        <a href="download.html">Download</a>
-        <a href="changelog.html" class="active">Changelog</a>
+  <header>
+    <div class="header-container">
+      <div class="header-content">
+        <a href="/" class="logo"><img class="logo-icon" src="icon.png" alt="Claudit"> Claudit</a>
+        <div class="nav-links">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/download.html" class="nav-link">Download</a>
+          <a href="/changelog.html" class="nav-link active">Changelog</a>
+        </div>
       </div>
     </div>
-  </nav>
+  </header>
 
   <div class="container">
     <div class="header">
