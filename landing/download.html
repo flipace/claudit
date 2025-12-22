@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Download Claudit — Claude Code Usage Monitor</title>
-  <meta name="description" content="Download Claudit for macOS, Windows, and Linux. Monitor your Claude Code usage with real-time analytics.">
+  <meta name="description" content="Download Claudit for macOS. Monitor your Claude Code usage with real-time analytics.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -218,7 +218,7 @@
   <main>
     <div class="container">
       <h1>Download Claudit</h1>
-      <p class="subtitle">Download Claudit for your operating system.</p>
+      <p class="subtitle">Download Claudit for macOS. <span style="color: var(--text-muted);">Windows & Linux coming soon.</span></p>
       <div id="content">
         <div class="loading"><div class="spinner"></div></div>
       </div>
@@ -251,22 +251,15 @@
     const MINIO_BASE_URL = 'https://claudit-minio.cloud.neschkudla.at/claudit-releases';
 
     const platformInfo = {
-      macos: { iconId: 'icon-macos', label: 'macOS' },
-      linux: { iconId: 'icon-linux', label: 'Linux' },
-      windows: { iconId: 'icon-windows', label: 'Windows' }
+      macos: { iconId: 'icon-macos', label: 'macOS' }
     };
 
     function parseFileName(name) {
       const lower = name.toLowerCase();
-      // macOS
+      // macOS only
       if (lower.endsWith('.dmg')) return { platform: 'macos', type: 'DMG' };
       if (lower.endsWith('.app.tar.gz')) return { platform: 'macos', type: 'App Bundle' };
-      // Linux
-      if (lower.endsWith('.appimage')) return { platform: 'linux', type: 'AppImage' };
-      if (lower.endsWith('.deb')) return { platform: 'linux', type: 'DEB' };
-      // Windows
-      if (lower.includes('-setup') && lower.endsWith('.exe')) return { platform: 'windows', type: 'Installer (EXE)' };
-      if (lower.endsWith('.msi')) return { platform: 'windows', type: 'MSI' };
+      // Skip Windows and Linux for now
       return null;
     }
 
@@ -340,12 +333,11 @@
       body.className = 'release-body';
       const grid = document.createElement('div');
       grid.className = 'platform-grid';
-      ['macos', 'windows', 'linux'].forEach(platform => {
-        const platformFiles = release.files.filter(f => f.platform === platform);
-        if (platformFiles.length > 0) {
-          grid.appendChild(createPlatformSection(platform, platformFiles));
-        }
-      });
+      // Only show macOS for now
+      const macosFiles = release.files.filter(f => f.platform === 'macos');
+      if (macosFiles.length > 0) {
+        grid.appendChild(createPlatformSection('macos', macosFiles));
+      }
       if (grid.children.length === 0) {
         const noDownloads = document.createElement('p');
         noDownloads.style.color = 'var(--text-muted)';
@@ -432,16 +424,9 @@
         content.replaceChildren();
         const latestRelease = releases[0];
 
-        // Detect user's platform
-        function detectPlatform() {
-          const ua = navigator.userAgent.toLowerCase();
-          if (ua.includes('mac')) return 'macos';
-          if (ua.includes('win')) return 'windows';
-          if (ua.includes('linux')) return 'linux';
-          return 'macos'; // default
-        }
-        const userPlatform = detectPlatform();
-        const platformFiles = latestRelease.files.filter(f => f.platform === userPlatform);
+        // Only macOS is supported for now
+        const userPlatform = 'macos';
+        const platformFiles = latestRelease.files.filter(f => f.platform === 'macos');
 
         if (platformFiles.length > 0) {
           const recommended = document.createElement('div');

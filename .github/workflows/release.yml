@@ -7,18 +7,18 @@ on:
   workflow_dispatch:
     inputs:
       build_linux:
-        description: 'Build Linux'
+        description: 'Build Linux (disabled by default)'
         type: boolean
-        default: true
+        default: false
       build_windows:
-        description: 'Build Windows'
+        description: 'Build Windows (disabled by default)'
         type: boolean
-        default: true
+        default: false
 
 jobs:
-  # Linux build
+  # Linux build (disabled by default - only runs via workflow_dispatch with build_linux=true)
   release-linux:
-    if: github.event_name == 'push' || inputs.build_linux
+    if: github.event_name == 'workflow_dispatch' && inputs.build_linux
     permissions:
       contents: write
     runs-on: ubuntu-22.04
@@ -78,9 +78,9 @@ jobs:
             [ -f "$file" ] && aws --endpoint-url "$MINIO_ENDPOINT" s3 cp "$file" "$BUCKET/${RELEASE_TAG}/" || true
           done
 
-  # Windows build
+  # Windows build (disabled by default - only runs via workflow_dispatch with build_windows=true)
   release-windows:
-    if: github.event_name == 'push' || inputs.build_windows
+    if: github.event_name == 'workflow_dispatch' && inputs.build_windows
     permissions:
       contents: write
     runs-on: windows-latest
