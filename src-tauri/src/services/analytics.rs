@@ -1,54 +1,22 @@
+use super::pricing;
 use crate::services::usage::UsageReader;
 use crate::types::{
     AnalyticsStats, ChartData, DailyStats, HourlyStats, ModelChartData, ModelStats,
-    ProjectChartData, ProjectStats, TokenCosts, UsageEntry,
+    ProjectChartData, ProjectStats, UsageEntry,
 };
 use chrono::{DateTime, Datelike, Duration, Timelike, Utc};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-/// Token pricing per 1M tokens for different models
-fn get_model_costs(model: &str) -> TokenCosts {
-    let model_lower = model.to_lowercase();
-
-    if model_lower.contains("opus") {
-        TokenCosts {
-            input: 15.0,
-            output: 75.0,
-            cache_read: 1.50,
-            cache_write: 18.75,
-        }
-    } else if model_lower.contains("sonnet") {
-        TokenCosts {
-            input: 3.0,
-            output: 15.0,
-            cache_read: 0.30,
-            cache_write: 3.75,
-        }
-    } else if model_lower.contains("haiku") {
-        TokenCosts {
-            input: 0.25,
-            output: 1.25,
-            cache_read: 0.025,
-            cache_write: 0.30,
-        }
-    } else {
-        // Default to sonnet pricing
-        TokenCosts::default()
-    }
-}
-
-/// Calculate cost for a single entry
+/// Calculate cost for a single usage entry
 fn calculate_entry_cost(entry: &UsageEntry) -> f64 {
-    let costs = get_model_costs(&entry.model);
-    let per_million = 1_000_000.0;
-
-    let input_cost = (entry.input_tokens as f64 / per_million) * costs.input;
-    let output_cost = (entry.output_tokens as f64 / per_million) * costs.output;
-    let cache_read_cost = (entry.cache_read_tokens as f64 / per_million) * costs.cache_read;
-    let cache_write_cost = (entry.cache_creation_tokens as f64 / per_million) * costs.cache_write;
-
-    input_cost + output_cost + cache_read_cost + cache_write_cost
+    pricing::calculate_cost(
+        &entry.model,
+        entry.input_tokens,
+        entry.output_tokens,
+        entry.cache_creation_tokens,
+        entry.cache_read_tokens,
+    )
 }
 
 /// Get the session block key (5-hour blocks)

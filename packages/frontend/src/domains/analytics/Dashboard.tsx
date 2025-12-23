@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Bell,
 } from "lucide-react";
+import { SkeletonStatCard, SkeletonChart } from "../../components/Skeleton";
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) {
@@ -46,8 +47,6 @@ export function Dashboard() {
   const { data: hooksInstalled } = useHooksStatus();
   const { data: hookPort } = useHookPort();
   const installHooksMutation = useInstallHooks();
-
-  const isLoading = statsLoading || chartLoading;
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
@@ -120,14 +119,16 @@ export function Dashboard() {
       )}
 
 
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      ) : (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        {statsLoading ? (
+          <>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonStatCard key={i} />
+            ))}
+          </>
+        ) : (
+          <>
             <StatCard
               title="Messages Today"
               value={stats?.today_messages ?? 0}
@@ -167,30 +168,40 @@ export function Dashboard() {
               subtitle={`${formatNumber(stats?.total_cache_read_tokens ?? 0)} cached`}
               icon={<Zap size={20} />}
             />
-          </div>
+          </>
+        )}
+      </div>
 
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {chartData && (
-              <>
-                <TokenChart data={chartData.daily} />
-                <CostChart data={chartData.daily} />
-                <ModelChart data={chartData.by_model} />
-                <HourlyChart data={chartData.hourly} />
-                <div className="lg:col-span-2">
-                  <ProjectChart data={chartData.by_project} />
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Last Updated */}
-          {stats?.last_updated && (
-            <div className="mt-4 text-center text-xs text-muted-foreground">
-              Last updated: {new Date(stats.last_updated).toLocaleString()}
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {chartLoading ? (
+          <>
+            <SkeletonChart />
+            <SkeletonChart />
+            <SkeletonChart />
+            <SkeletonChart />
+            <div className="lg:col-span-2">
+              <SkeletonChart />
             </div>
-          )}
-        </>
+          </>
+        ) : chartData ? (
+          <>
+            <TokenChart data={chartData.daily} />
+            <CostChart data={chartData.daily} />
+            <ModelChart data={chartData.by_model} />
+            <HourlyChart data={chartData.hourly} />
+            <div className="lg:col-span-2">
+              <ProjectChart data={chartData.by_project} />
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      {/* Last Updated */}
+      {stats?.last_updated && (
+        <div className="mt-4 text-center text-xs text-muted-foreground">
+          Last updated: {new Date(stats.last_updated).toLocaleString()}
+        </div>
       )}
 
       {/* Footer */}

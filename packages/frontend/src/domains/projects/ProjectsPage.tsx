@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
+import Fuse from "fuse.js";
 import {
   FolderOpen,
   RefreshCw,
@@ -22,11 +24,17 @@ import {
   ArrowLeft,
   LayoutGrid,
   ChevronDown,
+  MessageSquare,
+  ChevronRight,
+  Bot,
 } from "lucide-react";
 import { PageHeader } from "../../components/PageHeader";
 import { MarkdownViewer } from "../../components/MarkdownViewer";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
+import { Skeleton, SkeletonProjectCard, SkeletonSessionItem } from "../../components/Skeleton";
+import { ConversationViewer } from "./components";
+import type { SessionInfo, SessionConversation, SessionSearchResult } from "../../types";
 
 interface ProjectInfo {
   path: string;
@@ -71,7 +79,7 @@ interface ProjectSuggestion {
   projectPath: string;
 }
 
-type TabType = "overview" | "claude-md" | "commands" | "mcp" | "suggestions";
+type TabType = "overview" | "claude-md" | "commands" | "mcp" | "suggestions" | "sessions";
 
 export function ProjectsPage() {
   const queryClient = useQueryClient();
@@ -84,6 +92,32 @@ export function ProjectsPage() {
   const [launchingClaude, setLaunchingClaude] = useState(false);
   const [launchSuccess, setLaunchSuccess] = useState(false);
   const [expandedCommand, setExpandedCommand] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [sessionSearchQuery, setSessionSearchQuery] = useState("");
+  const sessionRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [showWarmupSessions, setShowWarmupSessions] = useState(false);
+
+  // Debounce session search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(sessionSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [sessionSearchQuery]);
+
+  // Auto-scroll to selected session
+  useEffect(() => {
+    if (selectedSession && activeTab === "sessions") {
+      const element = sessionRefs.current.get(selectedSession);
+      if (element) {
+        // Small delay to ensure the DOM is ready
+        requestAnimationFrame(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+    }
+  }, [selectedSession, activeTab]);
 
   // Fetch projects
   const {
@@ -110,6 +144,45 @@ export function ProjectsPage() {
     queryKey: ["commandContent", expandedCommand],
     queryFn: () => invoke<string>("get_agent_or_command_content", { path: expandedCommand! }),
     enabled: !!expandedCommand,
+  });
+
+  // Fetch sessions for the project (needed for both overview and sessions tabs)
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["projectSessions", selectedProject?.path],
+    queryFn: () => invoke<SessionInfo[]>("list_project_sessions", { projectPath: selectedProject!.path }),
+    enabled: !!selectedProject && (activeTab === "sessions" || activeTab === "overview"),
+  });
+
+  // Recent sessions for overview (exclude warmup, limit to 10)
+  const recentSessions = useMemo(() => {
+    if (!sessions) return [];
+    return sessions
+      .filter(s => {
+        const title = s.summary || s.first_user_message || "";
+        return title.toLowerCase() !== "warmup";
+      })
+      .slice(0, 10);
+  }, [sessions]);
+
+  // Fetch conversation for selected session
+  const { data: conversation, isLoading: conversationLoading } = useQuery({
+    queryKey: ["sessionConversation", selectedProject?.path, selectedSession],
+    queryFn: () => invoke<SessionConversation>("get_session_conversation", {
+      projectPath: selectedProject!.path,
+      sessionId: selectedSession!
+    }),
+    enabled: !!selectedProject && !!selectedSession,
+  });
+
+  // Search session message content (backend search)
+  const { data: contentSearchResults, isLoading: contentSearchLoading } = useQuery({
+    queryKey: ["sessionContentSearch", selectedProject?.path, debouncedSearchQuery],
+    queryFn: () => invoke<SessionSearchResult[]>("search_project_sessions", {
+      projectPath: selectedProject!.path,
+      query: debouncedSearchQuery
+    }),
+    enabled: !!selectedProject && activeTab === "sessions" && debouncedSearchQuery.length >= 2,
+    staleTime: 60000, // Cache for 1 minute
   });
 
   // Mutation for getting AI suggestions
@@ -257,6 +330,133 @@ export function ProjectsPage() {
     return date.toLocaleDateString();
   };
 
+  const formatDateTime = (dateStr?: string | null) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const handleCopyResumeCmd = async (sessionId: string) => {
+    try {
+      await navigator.clipboard.writeText(`claude --resume ${sessionId}`);
+    } catch (e) {
+      console.error("Failed to copy:", e);
+    }
+  };
+
+  const handleOpenTerminalWithResume = async (sessionId: string) => {
+    if (!selectedProject) return;
+    try {
+      await invoke("open_terminal_with_resume", { projectPath: selectedProject.path, sessionId });
+    } catch (e) {
+      console.error("Failed to open terminal:", e);
+    }
+  };
+
+  const getSessionTitle = (session: SessionInfo | SessionSearchResult) => {
+    return session.summary || session.first_user_message || "Untitled Session";
+  };
+
+  // Fuse.js instance for fuzzy title search (excludes warmup sessions)
+  const fuse = useMemo(() => {
+    if (!sessions) return null;
+    const nonWarmups = sessions.filter(s => {
+      const title = s.summary || s.first_user_message || "";
+      return title.toLowerCase() !== "warmup";
+    });
+    return new Fuse(nonWarmups, {
+      keys: ['summary', 'first_user_message'],
+      threshold: 0.4,
+      includeScore: true,
+      ignoreLocation: true,
+    });
+  }, [sessions]);
+
+  // Helper to check if a session is a warmup
+  const isWarmupSession = (session: SessionInfo) => {
+    const title = session.summary || session.first_user_message || "";
+    return title.toLowerCase() === "warmup";
+  };
+
+  // Combined search: Fuse.js for titles + backend for content
+  const { filteredSessions, contentMatches, warmupSessions } = useMemo(() => {
+    if (!sessions) return { filteredSessions: [], contentMatches: new Map<string, SessionSearchResult>(), warmupSessions: [] };
+
+    // Separate warmup sessions
+    const warmups = sessions.filter(isWarmupSession);
+    const nonWarmups = sessions.filter(s => !isWarmupSession(s));
+
+    // No search query - return non-warmup sessions (warmups shown separately)
+    if (!debouncedSearchQuery) {
+      return { filteredSessions: nonWarmups, contentMatches: new Map(), warmupSessions: warmups };
+    }
+
+    // Use Fuse.js for title/summary search (only on non-warmup sessions)
+    const titleResults = fuse?.search(debouncedSearchQuery) || [];
+    const titleMatchIds = new Set(titleResults.map(r => r.item.session_id));
+
+    // Get content search results from backend
+    const contentMatchMap = new Map<string, SessionSearchResult>();
+    if (contentSearchResults) {
+      contentSearchResults.forEach(result => {
+        if (!titleMatchIds.has(result.session_id)) {
+          contentMatchMap.set(result.session_id, result);
+        }
+      });
+    }
+
+    // Combine: title matches first, then content matches
+    const combined: SessionInfo[] = [];
+
+    // Add title matches (sorted by Fuse score), excluding warmups
+    titleResults.forEach(r => {
+      if (!isWarmupSession(r.item)) {
+        combined.push(r.item);
+      }
+    });
+
+    // Add content matches (sessions not in title results), excluding warmups
+    if (contentSearchResults) {
+      contentSearchResults.forEach(result => {
+        if (!titleMatchIds.has(result.session_id)) {
+          // Find the full session info
+          const session = sessions.find(s => s.session_id === result.session_id);
+          if (session && !combined.some(s => s.session_id === session.session_id) && !isWarmupSession(session)) {
+            combined.push(session);
+          }
+        }
+      });
+    }
+
+    return { filteredSessions: combined, contentMatches: contentMatchMap, warmupSessions: warmups };
+  }, [sessions, debouncedSearchQuery, fuse, contentSearchResults]);
+
+  const handleExportSession = async (sessionId: string) => {
+    if (!selectedProject) return;
+    try {
+      const html = await invoke<string>("export_session_to_html", {
+        projectPath: selectedProject.path,
+        sessionId
+      });
+
+      const path = await save({
+        defaultPath: `claude-session-${sessionId.slice(0, 8)}.html`,
+        filters: [{ name: "HTML", extensions: ["html"] }]
+      });
+
+      if (path) {
+        await writeTextFile(path, html);
+      }
+    } catch (e) {
+      console.error("Failed to export session:", e);
+    }
+  };
+
   // Project Detail View
   if (selectedProject) {
     return (
@@ -319,6 +519,7 @@ export function ProjectsPage() {
           <div className="flex items-center gap-1 mt-3 -mb-3">
             {[
               { id: "overview", label: "Overview", icon: LayoutGrid },
+              { id: "sessions", label: "Sessions", icon: MessageSquare },
               { id: "claude-md", label: "CLAUDE.md", icon: FileText },
               { id: "commands", label: "Commands", icon: Terminal },
               { id: "mcp", label: "MCP Servers", icon: Server },
@@ -342,6 +543,9 @@ export function ProjectsPage() {
                 {tab.id === "mcp" && projectDetails && projectDetails.mcpServers.length > 0 && (
                   <span className="ml-1 text-xs bg-zinc-700 px-1.5 rounded">{projectDetails.mcpServers.length}</span>
                 )}
+                {tab.id === "sessions" && sessions && sessions.length > 0 && (
+                  <span className="ml-1 text-xs bg-zinc-700 px-1.5 rounded">{sessions.length}</span>
+                )}
                 {tab.id === "suggestions" && suggestionCache[selectedProject.path] && (
                   <span className="ml-1 w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
@@ -353,9 +557,41 @@ export function ProjectsPage() {
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {detailsLoading ? (
-            <div className="flex items-center justify-center h-32 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Loading project details...
+            <div className="space-y-6">
+              {/* Skeleton Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Skeleton className="w-4 h-4 rounded" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                ))}
+              </div>
+              {/* Skeleton Info Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
+                  <Skeleton className="h-4 w-24 mb-4" />
+                  <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex justify-between">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-12" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
+                  <Skeleton className="h-4 w-24 mb-4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    <Skeleton className="h-10 w-full rounded-md" />
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <>
@@ -446,6 +682,67 @@ export function ProjectsPage() {
                         </button>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Recent Sessions */}
+                  <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-primary" />
+                        Recent Sessions
+                      </h3>
+                      {recentSessions.length > 0 && (
+                        <button
+                          onClick={() => setActiveTab("sessions")}
+                          className="text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          View all →
+                        </button>
+                      )}
+                    </div>
+                    {sessionsLoading ? (
+                      <div className="space-y-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-zinc-800/30">
+                            <Skeleton className="w-8 h-8 rounded" />
+                            <div className="flex-1">
+                              <Skeleton className="h-4 w-40 mb-1" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : recentSessions.length > 0 ? (
+                      <div className="space-y-1">
+                        {recentSessions.map((session) => (
+                          <button
+                            key={session.session_id}
+                            onClick={() => {
+                              setActiveTab("sessions");
+                              setSelectedSession(session.session_id);
+                            }}
+                            className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-zinc-800/50 transition-colors text-left group"
+                          >
+                            <div className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                              <Bot className="w-4 h-4 text-purple-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate group-hover:text-primary transition-colors">
+                                {getSessionTitle(session)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDateTime(session.first_message_at)} • {session.message_count} msgs
+                              </p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No sessions yet
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -770,6 +1067,189 @@ export function ProjectsPage() {
                   )}
                 </div>
               )}
+
+              {/* Sessions Tab */}
+              {activeTab === "sessions" && (
+                <div className="h-full flex gap-4 overflow-hidden">
+                  {/* Session List */}
+                  <div className="w-80 flex-shrink-0 flex flex-col overflow-hidden">
+                    {/* Search */}
+                    <div className="relative mb-2 flex-shrink-0">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search sessions..."
+                        value={sessionSearchQuery}
+                        onChange={(e) => setSessionSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-8 py-2 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      {contentSearchLoading && debouncedSearchQuery.length >= 2 && (
+                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-2">
+                      {sessionsLoading ? (
+                        <div className="space-y-2">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <SkeletonSessionItem key={i} />
+                          ))}
+                        </div>
+                      ) : (filteredSessions && filteredSessions.length > 0) || warmupSessions.length > 0 ? (
+                        <>
+                          {/* Regular sessions */}
+                          {filteredSessions.map((session) => {
+                            const contentMatch = contentMatches.get(session.session_id);
+                            const title = getSessionTitle(session);
+
+                            return (
+                              <button
+                                key={session.session_id}
+                                ref={(el) => {
+                                  if (el) sessionRefs.current.set(session.session_id, el);
+                                  else sessionRefs.current.delete(session.session_id);
+                                }}
+                                onClick={() => setSelectedSession(session.session_id)}
+                                className={cn(
+                                  "w-full text-left p-3 rounded-lg border transition-colors overflow-hidden",
+                                  selectedSession === session.session_id
+                                    ? "bg-primary/10 border-primary/50"
+                                    : "bg-zinc-900/50 border-zinc-800/50 hover:bg-zinc-800/50"
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0 overflow-hidden">
+                                    <p className="text-sm font-medium truncate">
+                                      {title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {formatDateTime(session.first_message_at)}
+                                    </p>
+                                  </div>
+                                  <ChevronRight className={cn(
+                                    "w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform",
+                                    selectedSession === session.session_id && "rotate-90"
+                                  )} />
+                                </div>
+                                {/* Content match context */}
+                                {contentMatch && (
+                                  <div className="mt-2 p-2 bg-amber-500/10 rounded text-xs text-amber-400/80 overflow-hidden">
+                                    <div className="flex items-center gap-1 mb-1 text-amber-500">
+                                      <Search className="w-3 h-3" />
+                                      <span className="font-medium">
+                                        Match in {contentMatch.message_role === "user" ? "user" : "assistant"} message
+                                      </span>
+                                    </div>
+                                    <p className="truncate text-foreground/70">{contentMatch.match_context}</p>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                  <span className="text-xs bg-zinc-800 px-1.5 py-0.5 rounded">
+                                    {session.message_count} msgs
+                                  </span>
+                                  <span className="text-xs bg-zinc-800 px-1.5 py-0.5 rounded">
+                                    {formatTokens(session.total_input_tokens + session.total_output_tokens)} tokens
+                                  </span>
+                                  {session.total_cost > 0 && (
+                                    <span className="text-xs bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded">
+                                      {formatCost(session.total_cost)}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+
+                          {/* Collapsed warmup sessions */}
+                          {warmupSessions.length > 0 && !debouncedSearchQuery && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => setShowWarmupSessions(!showWarmupSessions)}
+                                className="w-full text-left px-3 py-2 rounded-lg bg-zinc-800/30 border border-zinc-800/30 hover:bg-zinc-800/50 transition-colors"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className={cn(
+                                      "w-3 h-3 text-muted-foreground transition-transform",
+                                      !showWarmupSessions && "-rotate-90"
+                                    )} />
+                                    <span className="text-xs text-muted-foreground">
+                                      {warmupSessions.length} warmup session{warmupSessions.length !== 1 ? "s" : ""}
+                                    </span>
+                                    <span className="text-[10px] bg-zinc-700/50 text-zinc-400 px-1.5 py-0.5 rounded">init</span>
+                                  </div>
+                                </div>
+                              </button>
+
+                              {/* Expanded warmup sessions */}
+                              <AnimatePresence>
+                                {showWarmupSessions && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="pt-1 space-y-1 pl-4 border-l border-zinc-700/50 ml-1.5 mt-1">
+                                      {warmupSessions.map((session) => (
+                                        <button
+                                          key={session.session_id}
+                                          ref={(el) => {
+                                            if (el) sessionRefs.current.set(session.session_id, el);
+                                            else sessionRefs.current.delete(session.session_id);
+                                          }}
+                                          onClick={() => setSelectedSession(session.session_id)}
+                                          className={cn(
+                                            "w-full text-left px-2 py-1.5 rounded text-xs transition-colors",
+                                            selectedSession === session.session_id
+                                              ? "bg-primary/10 text-primary"
+                                              : "text-muted-foreground hover:text-foreground hover:bg-zinc-800/50"
+                                          )}
+                                        >
+                                          {formatDateTime(session.first_message_at)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+
+                          {/* Empty state when only warmups exist */}
+                          {filteredSessions.length === 0 && warmupSessions.length > 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                              <p className="text-sm">No conversation sessions yet</p>
+                              <p className="text-xs mt-1">Only warmup sessions found</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                          <MessageSquare className="w-12 h-12 mb-3 opacity-50" />
+                          <p className="text-sm font-medium">No sessions found</p>
+                          <p className="text-xs mt-1">{sessionSearchQuery ? "Try a different search" : "Chat sessions will appear here"}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Conversation Viewer */}
+                  <div className="flex-1 flex flex-col min-w-0 rounded-lg bg-zinc-900/30 border border-zinc-800/50 overflow-hidden">
+                    <ConversationViewer
+                      conversation={conversation}
+                      isLoading={conversationLoading}
+                      sessionId={selectedSession}
+                      sessionTitle={conversation?.summary || sessions?.find(s => s.session_id === selectedSession)?.first_user_message || "Session"}
+                      messageCount={conversation?.messages.length || 0}
+                      onCopyResumeCmd={handleCopyResumeCmd}
+                      onOpenTerminalWithResume={handleOpenTerminalWithResume}
+                      onExportSession={handleExportSession}
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -826,9 +1306,10 @@ export function ProjectsPage() {
       {/* Project Grid */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground">
-            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-            Loading projects...
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <SkeletonProjectCard key={i} />
+            ))}
           </div>
         ) : filteredProjects && filteredProjects.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

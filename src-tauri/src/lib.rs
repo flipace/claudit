@@ -3,7 +3,7 @@ mod tray;
 mod types;
 
 use services::{
-    AnalyticsService, HookInstaller, HookServer, SettingsService,
+    AnalyticsService, HookInstaller, HookServer, ModelPricing, SettingsService,
     // Config service types
     ClaudeMdFile, AgentInfo, CommandInfo, PluginInfo, McpServer, ProjectInfo, ProjectDetails,
     PatternAnalysis, AiSuggestion, ProjectSuggestion, ExportOptions, BackupInfo, GitStatus,
@@ -12,7 +12,7 @@ use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 use tray::create_tray;
-use types::{AnalyticsStats, AppSettings, ChartData};
+use types::{AnalyticsStats, AppSettings, ChartData, SessionInfo, SessionConversation, SessionSearchResult};
 
 /// Application state
 pub struct AppState {
@@ -230,6 +230,158 @@ async fn open_folder(path: String) -> Result<(), String> {
     services::config::open_folder(&path)
 }
 
+#[tauri::command]
+async fn get_model_pricing() -> Result<Vec<ModelPricing>, String> {
+    Ok(services::pricing::get_all_pricing())
+}
+
+// ============ Session Commands ============
+
+#[tauri::command]
+async fn list_project_sessions(project_path: String) -> Result<Vec<SessionInfo>, String> {
+    services::list_sessions(&project_path)
+}
+
+#[tauri::command]
+async fn get_session_conversation(project_path: String, session_id: String) -> Result<SessionConversation, String> {
+    services::get_session_conversation(&project_path, &session_id)
+}
+
+#[tauri::command]
+async fn export_session_to_html(project_path: String, session_id: String) -> Result<String, String> {
+    services::export_session_html(&project_path, &session_id)
+}
+
+#[tauri::command]
+async fn search_project_sessions(project_path: String, query: String) -> Result<Vec<SessionSearchResult>, String> {
+    services::search_sessions(&project_path, &query)
+}
+
+/// Detect available terminal apps on macOS
+#[cfg(target_os = "macos")]
+fn detect_terminal_app() -> String {
+    // Check for common terminal apps in order of preference
+    let terminals = ["iTerm", "Warp", "Alacritty", "kitty", "Terminal"];
+
+    for terminal in terminals {
+        let check = std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(format!(r#"tell application "System Events" to (name of processes) contains "{}""#, terminal))
+            .output();
+
+        if let Ok(output) = check {
+            let result = String::from_utf8_lossy(&output.stdout);
+            if result.trim() == "true" {
+                return terminal.to_string();
+            }
+        }
+    }
+
+    // Check if apps exist in /Applications
+    for terminal in terminals {
+        let app_path = format!("/Applications/{}.app", terminal);
+        if std::path::Path::new(&app_path).exists() {
+            return terminal.to_string();
+        }
+    }
+
+    // Default to Terminal
+    "Terminal".to_string()
+}
+
+#[tauri::command]
+async fn open_terminal_with_resume(
+    state: tauri::State<'_, AppState>,
+    project_path: String,
+    session_id: String,
+) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let settings = state.settings.get();
+        let terminal = if settings.terminal_app == "auto" {
+            detect_terminal_app()
+        } else {
+            settings.terminal_app.clone()
+        };
+
+        // Escape single quotes in the path
+        let escaped_path = project_path.replace("'", "'\\''");
+        let command = format!("cd '{}' && claude --resume {}", escaped_path, session_id);
+
+        let script = match terminal.as_str() {
+            "iTerm" => format!(
+                r#"tell application "iTerm"
+                    activate
+                    try
+                        tell current window
+                            create tab with default profile
+                            tell current session
+                                write text "{}"
+                            end tell
+                        end tell
+                    on error
+                        create window with default profile
+                        tell current window
+                            tell current session
+                                write text "{}"
+                            end tell
+                        end tell
+                    end try
+                end tell"#,
+                command, command
+            ),
+            "Warp" => format!(
+                r#"tell application "Warp"
+                    activate
+                    do script "{}"
+                end tell"#,
+                command
+            ),
+            "Alacritty" | "kitty" => {
+                // For these terminals, use open command with shell
+                return std::process::Command::new("open")
+                    .arg("-a")
+                    .arg(&terminal)
+                    .spawn()
+                    .map_err(|e| format!("Failed to open {}: {}", terminal, e))
+                    .and_then(|_| {
+                        // Give the terminal time to open, then use pbcopy + paste approach
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                        // Copy command to clipboard
+                        let mut child = std::process::Command::new("pbcopy")
+                            .stdin(std::process::Stdio::piped())
+                            .spawn()
+                            .map_err(|e| format!("Failed to copy command: {}", e))?;
+                        if let Some(stdin) = child.stdin.as_mut() {
+                            use std::io::Write;
+                            stdin.write_all(command.as_bytes()).ok();
+                        }
+                        child.wait().ok();
+                        Ok(())
+                    });
+            }
+            _ => format!(
+                r#"tell application "Terminal"
+                    activate
+                    do script "{}"
+                end tell"#,
+                command
+            ),
+        };
+
+        std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .spawn()
+            .map_err(|e| format!("Failed to open {}: {}", terminal, e))?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Err("Terminal launch only supported on macOS".to_string())
+    }
+}
+
 // ============ Main Entry ============
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -238,6 +390,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(AppState {
             analytics: AnalyticsService::new(),
             settings: SettingsService::new(),
@@ -283,6 +436,13 @@ pub fn run() {
             get_config_git_status,
             open_in_editor,
             open_folder,
+            get_model_pricing,
+            // Session commands
+            list_project_sessions,
+            get_session_conversation,
+            export_session_to_html,
+            search_project_sessions,
+            open_terminal_with_resume,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

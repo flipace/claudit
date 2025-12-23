@@ -1,14 +1,47 @@
 use crate::types::{RawLogEntry, UsageEntry};
 use chrono::{DateTime, Utc};
 use glob::glob;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
+
+/// Encode a path to its folder name (same logic Claude uses)
+fn encode_path_to_folder(path: &str) -> String {
+    path.replace('/', "-")
+}
+
+/// Build a lookup map from encoded folder names to actual project paths
+fn build_project_path_map() -> HashMap<String, String> {
+    let mut map = HashMap::new();
+
+    // Read .claude.json to get registered projects
+    let claude_json_path = dirs::home_dir()
+        .map(|h| h.join(".claude.json"))
+        .unwrap_or_else(|| PathBuf::from("/.claude.json"));
+
+    if let Ok(mut file) = File::open(&claude_json_path) {
+        let mut contents = String::new();
+        if file.read_to_string(&mut contents).is_ok() {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) {
+                // Extract project paths from projects object
+                if let Some(projects) = json.get("projects").and_then(|p| p.as_object()) {
+                    for (path, _) in projects {
+                        let encoded = encode_path_to_folder(path);
+                        map.insert(encoded, path.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    map
+}
 
 /// Reads and parses Claude Code usage logs from JSONL files
 pub struct UsageReader {
     claude_dir: PathBuf,
+    project_path_map: HashMap<String, String>,
 }
 
 impl UsageReader {
@@ -16,7 +49,8 @@ impl UsageReader {
         let claude_dir = dirs::home_dir()
             .map(|h| h.join(".claude").join("projects"))
             .unwrap_or_else(|| PathBuf::from("/tmp/.claude/projects"));
-        Self { claude_dir }
+        let project_path_map = build_project_path_map();
+        Self { claude_dir, project_path_map }
     }
 
     /// Find all JSONL files in the Claude projects directory
@@ -42,13 +76,22 @@ impl UsageReader {
         files
     }
 
-    /// Extract project name from file path
-    fn extract_project_name(file_path: &PathBuf) -> String {
-        // Path structure: ~/.claude/projects/{project-hash}/{file}.jsonl
-        // The project hash is typically after "projects/"
+    /// Extract project path from file path
+    /// Returns the actual path (e.g., "/Users/foo/Development/my-project")
+    /// by looking up the encoded folder name in the project map
+    fn extract_project_path(&self, file_path: &PathBuf) -> String {
+        // Path structure: ~/.claude/projects/{encoded-path}/{file}.jsonl
         if let Some(parent) = file_path.parent() {
-            if let Some(name) = parent.file_name() {
-                return name.to_string_lossy().to_string();
+            if let Some(folder_name) = parent.file_name() {
+                let folder_str = folder_name.to_string_lossy().to_string();
+
+                // Look up the actual path in our map
+                if let Some(actual_path) = self.project_path_map.get(&folder_str) {
+                    return actual_path.clone();
+                }
+
+                // Fallback: return the encoded folder name if not in map
+                return folder_str;
             }
         }
         "unknown".to_string()
@@ -101,7 +144,7 @@ impl UsageReader {
         let cutoff = days.map(|d| Utc::now() - chrono::Duration::days(d as i64));
 
         for file_path in files {
-            let project = Self::extract_project_name(&file_path);
+            let project = self.extract_project_path(&file_path);
 
             let file = match File::open(&file_path) {
                 Ok(f) => f,

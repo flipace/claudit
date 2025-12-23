@@ -1,4 +1,5 @@
-use crate::types::{ContentBlock, RawLogEntry, TokenCosts};
+use super::pricing;
+use crate::types::{ContentBlock, RawLogEntry};
 use chrono::{DateTime, Utc};
 use glob::glob;
 use serde::{Deserialize, Serialize};
@@ -993,34 +994,6 @@ pub struct SessionStats {
     pub total_cost: f64,
 }
 
-/// Get model token costs for cost calculation
-fn get_model_costs(model: &str) -> TokenCosts {
-    let model_lower = model.to_lowercase();
-    if model_lower.contains("opus") {
-        TokenCosts {
-            input: 15.0,
-            output: 75.0,
-            cache_read: 1.50,
-            cache_write: 18.75,
-        }
-    } else if model_lower.contains("sonnet") {
-        TokenCosts {
-            input: 3.0,
-            output: 15.0,
-            cache_read: 0.30,
-            cache_write: 3.75,
-        }
-    } else if model_lower.contains("haiku") {
-        TokenCosts {
-            input: 0.25,
-            output: 1.25,
-            cache_read: 0.025,
-            cache_write: 0.30,
-        }
-    } else {
-        TokenCosts::default()
-    }
-}
 
 /// Analyze chat patterns from JSONL files
 pub fn analyze_chat_patterns(days: u32) -> Result<PatternAnalysis, String> {
@@ -1118,15 +1091,15 @@ pub fn analyze_chat_patterns(days: u32) -> Result<PatternAnalysis, String> {
                             total_output_tokens += output;
                             message_count += 1;
 
-                            // Calculate cost
+                            // Calculate cost using centralized pricing
                             let model = message.model.as_deref().unwrap_or("claude-sonnet-4");
-                            let costs = get_model_costs(model);
-                            let per_million = 1_000_000.0;
-                            let entry_cost =
-                                (input as f64 / per_million) * costs.input +
-                                (output as f64 / per_million) * costs.output +
-                                (cache_read as f64 / per_million) * costs.cache_read +
-                                (cache_write as f64 / per_million) * costs.cache_write;
+                            let entry_cost = pricing::calculate_cost(
+                                model,
+                                input,
+                                output,
+                                cache_write,
+                                cache_read,
+                            );
 
                             // Track session data
                             if let Some(ref session_id) = raw.session_id {

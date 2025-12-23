@@ -24,23 +24,22 @@ function formatNumber(n: number): string {
 }
 
 function getProjectFolderName(name: string): string {
-  // The analytics service returns folder names like "-Users-foo-project"
-  // Extract just the last segment (project name)
-  // e.g., "-Users-patrick-Development-myproject" -> "myproject"
-
-  // Handle encoded folder names (starting with -)
-  if (name.startsWith("-")) {
-    const parts = name.split("-").filter(Boolean);
-    if (parts.length > 0) {
-      return parts[parts.length - 1];
-    }
-  }
-
-  // Handle regular paths (shouldn't happen but fallback)
+  // The backend now returns actual paths like "/Users/foo/Development/my-project"
+  // Just extract the last path component
   const parts = name.split("/").filter(Boolean);
   if (parts.length > 0) {
     return parts[parts.length - 1];
   }
+
+  // Fallback for encoded folder names (starting with -)
+  // This handles projects not in .claude.json
+  if (name.startsWith("-")) {
+    const dashParts = name.split("-").filter(Boolean);
+    if (dashParts.length > 0) {
+      return dashParts[dashParts.length - 1];
+    }
+  }
+
   return name;
 }
 

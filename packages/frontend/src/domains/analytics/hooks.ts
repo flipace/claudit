@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import type { AnalyticsStats, ChartData, AppSettings } from "../../types";
+import type { AnalyticsStats, ChartData, AppSettings, ModelPricing } from "../../types";
 
 export function useStats() {
   return useQuery({
@@ -71,5 +71,13 @@ export function useHookPort() {
   return useQuery({
     queryKey: ["hook-port"],
     queryFn: () => invoke<number>("get_hook_port"),
+  });
+}
+
+export function useModelPricing() {
+  return useQuery({
+    queryKey: ["model-pricing"],
+    queryFn: () => invoke<ModelPricing[]>("get_model_pricing"),
+    staleTime: Infinity, // Pricing rarely changes
   });
 }

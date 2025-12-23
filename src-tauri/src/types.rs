@@ -264,6 +264,13 @@ pub struct AppSettings {
     pub hook_port: u16,
     #[serde(default)]
     pub claude_cli_path: Option<String>,
+    /// Terminal app to use: "auto", "Terminal", "iTerm", "Warp", "Alacritty", "kitty"
+    #[serde(default = "default_terminal_app")]
+    pub terminal_app: String,
+}
+
+fn default_terminal_app() -> String {
+    "auto".to_string()
 }
 
 impl Default for AppSettings {
@@ -280,6 +287,80 @@ impl Default for AppSettings {
             auto_start: false,
             hook_port: 3456,
             claude_cli_path: None,
+            terminal_app: default_terminal_app(),
         }
     }
+}
+
+// ============ Session Types ============
+
+/// Session info for listing sessions in a project
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionInfo {
+    pub session_id: String,
+    pub summary: Option<String>,
+    pub first_user_message: Option<String>,
+    pub first_message_at: Option<String>,
+    pub last_message_at: Option<String>,
+    pub message_count: u32,
+    pub total_input_tokens: u64,
+    pub total_output_tokens: u64,
+    pub total_cache_creation_tokens: u64,
+    pub total_cache_read_tokens: u64,
+    pub total_cost: f64,
+    pub model: Option<String>,
+}
+
+/// A single message in a conversation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConversationMessage {
+    pub uuid: String,
+    pub role: String, // "user" or "assistant"
+    pub timestamp: Option<String>,
+    pub content: Vec<MessageContentBlock>,
+    pub model: Option<String>,
+    pub input_tokens: Option<u64>,
+    pub output_tokens: Option<u64>,
+}
+
+/// Content block within a message
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum MessageContentBlock {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "thinking")]
+    Thinking { thinking: String },
+    #[serde(rename = "tool_use")]
+    ToolUse {
+        id: Option<String>,
+        name: Option<String>,
+        input: Option<serde_json::Value>,
+    },
+    #[serde(rename = "tool_result")]
+    ToolResult {
+        tool_use_id: Option<String>,
+        content: Option<serde_json::Value>,
+    },
+    #[serde(other)]
+    Other,
+}
+
+/// Full session with all messages
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionConversation {
+    pub session_id: String,
+    pub summary: Option<String>,
+    pub messages: Vec<ConversationMessage>,
+}
+
+/// Search result for a session
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionSearchResult {
+    pub session_id: String,
+    pub summary: Option<String>,
+    pub first_user_message: Option<String>,
+    pub matched_text: String,
+    pub match_context: String,
+    pub message_role: String,
 }

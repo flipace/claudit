@@ -2,6 +2,28 @@
 
 All notable changes to Claudit will be documented in this file.
 
+## [0.4.0] - 2025-12-23
+
+### Added
+- **Session Browser**: Browse and view all session conversations for each project
+- **In-Conversation Search**: Search within session conversations with `Cmd+F`
+  - Text highlighting for matches
+  - Navigate between matches with Enter/Shift+Enter or arrow buttons
+  - Match counter showing current position
+- **Session Export**: Export sessions to HTML format
+- **Session Resume**: Copy resume command or open terminal with resume
+- **Warmup Sessions**: Collapsed section for warmup/init sessions
+
+### Changed
+- **Centralized Pricing**: All model pricing now in single source of truth
+- **Pricing Display**: View all model costs in Settings page
+- **Project Paths**: Improved project name display using actual paths from .claude.json
+- **Code Refactoring**: Extracted `ConversationViewer`, `ConversationSearch`, `MessageBubble`, and `ContentBlock` components
+
+### Fixed
+- Session cost calculation now includes cache tokens (cache_read, cache_creation)
+- Project names with dashes now display correctly
+
 ## [0.3.0] - 2025-12-22
 
 ### Added

@@ -86,6 +86,7 @@ export interface AppSettings {
   auto_start: boolean;
   hook_port: number;
   claude_cli_path?: string;
+  terminal_app: string; // "auto", "Terminal", "iTerm", "Warp", "Alacritty", "kitty"
 }
 
 // Hook events
@@ -94,4 +95,61 @@ export interface HookEvent {
   tool?: string;
   context?: string;
   timestamp?: string;
+}
+
+// Model pricing for display
+export interface ModelPricing {
+  model_name: string;
+  input: number;
+  output: number;
+  cache_read: number;
+  cache_write: number;
+}
+
+// Session types
+export interface SessionInfo {
+  session_id: string;
+  summary: string | null;
+  first_user_message: string | null;
+  first_message_at: string | null;
+  last_message_at: string | null;
+  message_count: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_cache_creation_tokens: number;
+  total_cache_read_tokens: number;
+  total_cost: number;
+  model: string | null;
+}
+
+export type MessageContentBlock =
+  | { type: "text"; text: string }
+  | { type: "thinking"; thinking: string }
+  | { type: "tool_use"; id?: string; name?: string; input?: unknown }
+  | { type: "tool_result"; tool_use_id?: string; content?: unknown }
+  | { type: "Other" };
+
+export interface ConversationMessage {
+  uuid: string;
+  role: "user" | "assistant";
+  timestamp: string | null;
+  content: MessageContentBlock[];
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+}
+
+export interface SessionConversation {
+  session_id: string;
+  summary: string | null;
+  messages: ConversationMessage[];
+}
+
+export interface SessionSearchResult {
+  session_id: string;
+  summary: string | null;
+  first_user_message: string | null;
+  matched_text: string;
+  match_context: string;
+  message_role: string;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSettings, useUpdateSettings, useHooksStatus, useInstallHooks, useHookPort } from "../analytics/hooks";
+import { useSettings, useUpdateSettings, useHooksStatus, useInstallHooks, useHookPort, useModelPricing } from "../analytics/hooks";
 import { invoke } from "@tauri-apps/api/core";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Terminal,
   FolderOpen,
+  DollarSign,
 } from "lucide-react";
 
 function Toggle({
@@ -94,6 +95,7 @@ export function Settings() {
   const { data: hooksInstalled } = useHooksStatus();
   const { data: hookPort } = useHookPort();
   const installHooksMutation = useInstallHooks();
+  const { data: pricing } = useModelPricing();
   const [uninstalling, setUninstalling] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<boolean | null>(null);
   const [requestingPermission, setRequestingPermission] = useState(false);
@@ -234,7 +236,7 @@ export function Settings() {
           </div>
         </div>
 
-        <div className="py-4">
+        <div className="py-4 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-muted-foreground">
@@ -295,6 +297,39 @@ export function Settings() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-muted-foreground">
+                <Terminal size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Terminal App</p>
+                <p className="text-xs text-muted-foreground">
+                  Terminal to use for session resume
+                </p>
+              </div>
+            </div>
+            <select
+              value={settings.terminal_app || "auto"}
+              onChange={(e) => {
+                updateSettingsMutation.mutate({
+                  ...settings,
+                  terminal_app: e.target.value,
+                });
+              }}
+              className="px-3 py-1.5 text-sm bg-secondary/50 border border-border rounded text-foreground"
+            >
+              <option value="auto">Auto-detect</option>
+              <option value="Terminal">Terminal</option>
+              <option value="iTerm">iTerm2</option>
+              <option value="Warp">Warp</option>
+              <option value="Alacritty">Alacritty</option>
+              <option value="kitty">kitty</option>
+            </select>
           </div>
         </div>
       </SettingSection>
@@ -438,6 +473,60 @@ export function Settings() {
             onChange={(v) => handleToggle("compact_mode", v)}
           />
         </SettingRow>
+      </SettingSection>
+
+      {/* Pricing Reference */}
+      <SettingSection title="Token Pricing">
+        <div className="py-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="text-muted-foreground">
+              <DollarSign size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Model Pricing</p>
+              <p className="text-xs text-muted-foreground">
+                Cost per 1 million tokens (MTok) used for calculations
+              </p>
+            </div>
+          </div>
+          {pricing && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-muted-foreground border-b border-border/50">
+                    <th className="text-left py-2 pr-2 font-medium">Model</th>
+                    <th className="text-right py-2 px-2 font-medium">Input</th>
+                    <th className="text-right py-2 px-2 font-medium">Output</th>
+                    <th className="text-right py-2 px-2 font-medium">Cache Read</th>
+                    <th className="text-right py-2 pl-2 font-medium">Cache Write</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pricing.map((model) => (
+                    <tr key={model.model_name} className="border-b border-border/30 last:border-0">
+                      <td className="py-2 pr-2 text-foreground">{model.model_name}</td>
+                      <td className="text-right py-2 px-2 text-muted-foreground">${model.input.toFixed(2)}</td>
+                      <td className="text-right py-2 px-2 text-muted-foreground">${model.output.toFixed(2)}</td>
+                      <td className="text-right py-2 px-2 text-muted-foreground">${model.cache_read.toFixed(2)}</td>
+                      <td className="text-right py-2 pl-2 text-muted-foreground">${model.cache_write.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground/60 mt-3">
+            Source:{" "}
+            <a
+              href="https://docs.anthropic.com/en/docs/about-claude/models"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
+              Anthropic Model Pricing
+            </a>
+          </p>
+        </div>
       </SettingSection>
 
       {/* Footer */}

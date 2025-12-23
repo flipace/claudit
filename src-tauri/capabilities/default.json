@@ -17,6 +17,7 @@
     "core:window:allow-set-focus",
     "shell:allow-open",
     "notification:default",
-    "dialog:default"
+    "dialog:default",
+    "fs:allow-write-text-file"
   ]
 }
