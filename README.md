@@ -115,4 +115,4 @@ UNLICENSED - All rights reserved.
 
 ---
 
-Made by [@flipace](https://github.com/flipace) and [Claude Code](https://claude.ai/code)
+Made by [@flipace](https://neschkudla.at) and [Claude Code](https://claude.ai/code)

@@ -208,7 +208,7 @@ export function Dashboard() {
       <div className="mt-8 text-center text-xs text-muted-foreground/60">
         Made by{" "}
         <a
-          href="https://github.com/flipace"
+          href="https://neschkudla.at"
           target="_blank"
           rel="noopener noreferrer"
           className="text-muted-foreground hover:text-foreground"
