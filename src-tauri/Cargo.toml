@@ -1,6 +1,6 @@
 [package]
 name = "claudit"
-version = "0.4.0"
+version = "0.4.1"
 description = "Claude Code usage monitor with analytics dashboard"
 authors = ["flipace <neschkudla@gmail.com>"]
 edition = "2021"

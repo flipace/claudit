@@ -10,7 +10,11 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  Heart,
+  Github,
+  Globe,
 } from "lucide-react";
+import { open } from "@tauri-apps/plugin-shell";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { getVersion } from "@tauri-apps/api/app";
@@ -156,7 +160,7 @@ export function Sidebar({ activePage, onPageChange }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Version & Collapse Toggle */}
+      {/* Version, Support & Collapse Toggle */}
       <div className="border-t border-zinc-800/50">
         <AnimatePresence>
           {!collapsed && version && (
@@ -164,9 +168,41 @@ export function Sidebar({ activePage, onPageChange }: SidebarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="px-4 py-2 text-xs text-muted-foreground overflow-hidden"
+              className="px-4 py-2 text-xs text-muted-foreground overflow-hidden text-center"
             >
               v{version}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex items-center justify-center gap-1 py-2 overflow-hidden"
+            >
+              <button
+                onClick={() => open("https://github.com/flipace/claudit")}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-zinc-800/50 rounded-md transition-colors"
+                title="GitHub"
+              >
+                <Github size={16} />
+              </button>
+              <button
+                onClick={() => open("https://claudit.cloud.neschkudla.at")}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-zinc-800/50 rounded-md transition-colors"
+                title="Website"
+              >
+                <Globe size={16} />
+              </button>
+              <button
+                onClick={() => open("https://buymeacoffee.com/flipace")}
+                className="p-2 text-muted-foreground hover:text-pink-400 hover:bg-zinc-800/50 rounded-md transition-colors"
+                title="Support"
+              >
+                <Heart size={16} />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

@@ -2,6 +2,24 @@
 
 All notable changes to Claudit will be documented in this file.
 
+## [0.4.1] - 2025-12-23
+
+### Added
+- **Enhanced Tray Menu**: Comprehensive tray menu with new features:
+  - Burn rate display ($/hr) alongside today's cost
+  - Current session tokens and cost
+  - Primary model indicator in header
+  - Recent Projects submenu (top 5 projects, click to open)
+  - Open Section submenu (navigate directly to any app section)
+  - Quick Actions submenu (open config files and Claude folder)
+  - Notifications toggle checkbox
+
+### Fixed
+- **Tray Menu Performance**: Menu interactions are now instant
+  - Cached project list and settings to avoid disk I/O on every click
+  - Background thread for disk persistence
+- **Settings Sync**: Tray notifications toggle now syncs with UI and vice versa
+
 ## [0.4.0] - 2025-12-23
 
 ### Added

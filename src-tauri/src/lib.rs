@@ -11,7 +11,7 @@ use services::{
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
-use tray::create_tray;
+use tray::{create_tray, refresh_menu_cache, update_cached_settings, update_tray_menu};
 use types::{AnalyticsStats, AppSettings, ChartData, SessionInfo, SessionConversation, SessionSearchResult};
 
 /// Application state
@@ -48,19 +48,31 @@ async fn get_settings(state: tauri::State<'_, AppState>) -> Result<AppSettings, 
 
 #[tauri::command]
 async fn update_settings(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     settings: AppSettings,
 ) -> Result<(), String> {
-    state.settings.update(settings)
+    // Update cached settings for tray menu
+    update_cached_settings(&settings);
+    // Persist to disk
+    state.settings.update(settings)?;
+    // Refresh tray menu to reflect changes
+    let _ = update_tray_menu(&app);
+    Ok(())
 }
 
 #[tauri::command]
 async fn toggle_section(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     section: String,
     visible: bool,
 ) -> Result<(), String> {
-    state.settings.toggle_section(&section, visible)
+    state.settings.toggle_section(&section, visible)?;
+    // Update cache and tray menu
+    update_cached_settings(&state.settings.get());
+    let _ = update_tray_menu(&app);
+    Ok(())
 }
 
 #[tauri::command]
@@ -446,6 +458,9 @@ pub fn run() {
         ])
         .setup(|app| {
             let handle = app.handle().clone();
+
+            // Initialize menu cache before creating tray (does disk I/O once at startup)
+            refresh_menu_cache();
 
             // Create system tray
             create_tray(&handle)?;

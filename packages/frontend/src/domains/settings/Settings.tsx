@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSettings, useUpdateSettings, useHooksStatus, useInstallHooks, useHookPort, useModelPricing } from "../analytics/hooks";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { AppSettings } from "../../types";
@@ -104,6 +105,18 @@ export function Settings() {
   useEffect(() => {
     isPermissionGranted().then(setNotificationPermission);
   }, []);
+
+  // Listen for settings changes from tray menu
+  useEffect(() => {
+    const unlisten = listen<AppSettings>("settings-changed", (event) => {
+      // Update query cache directly with new settings
+      queryClient.setQueryData(["settings"], event.payload);
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [queryClient]);
 
   const handleRequestPermission = async () => {
     setRequestingPermission(true);

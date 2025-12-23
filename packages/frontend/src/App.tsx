@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isTauri } from "./lib/tauri";
 import type { Window } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { Dashboard } from "./domains/analytics";
 import { Settings } from "./domains/settings";
 import { ConfigPage } from "./domains/config";
@@ -24,6 +25,34 @@ function App() {
     import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
       tauriWindowRef.current = getCurrentWindow();
     });
+  }, []);
+
+  // Listen for navigation events from the tray menu
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    const unlisten = listen<string>("navigate", (event) => {
+      const section = event.payload;
+      // Map tray section names to Page types
+      const pageMap: Record<string, Page> = {
+        analytics: "analytics",
+        projects: "projects",
+        agents: "agents",
+        plugins: "plugins",
+        config: "config",
+        backup: "backup",
+        settings: "settings",
+        analysis: "analysis",
+      };
+      const page = pageMap[section];
+      if (page) {
+        setActivePage(page);
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, []);
 
   // Set up window dragging for Tauri
