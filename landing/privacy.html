@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Claudit</title>
+  <meta name="description" content="Privacy Policy for Claudit. Learn how we handle your data and protect your privacy.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #14161e;
+      --bg-elevated: #1a1d27;
+      --bg-card: #1e212c;
+      --text-primary: #f5f0eb;
+      --text-secondary: #9b958d;
+      --text-muted: #6b655d;
+      --accent: #d97757;
+      --accent-hover: #e08868;
+      --accent-glow: rgba(217, 119, 87, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: -150px; right: -100px;
+    }
+
+    .header-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; width: 100%; }
+
+    header { padding: 24px 0; position: relative; z-index: 10; }
+    .header-content { display: flex; align-items: center; justify-content: space-between; }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-mono); font-weight: 600; font-size: 18px;
+      color: var(--text-primary); text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: var(--text-secondary); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      padding: 8px 16px; border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: var(--text-primary); }
+
+    main { padding: 40px 0 80px; position: relative; z-index: 10; }
+
+    h1 { font-family: var(--font-mono); font-size: 32px; font-weight: 600; margin-bottom: 12px; }
+    .subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 40px; }
+
+    .content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px;
+      margin-top: 32px;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+
+    .content h2 {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 600;
+      margin-top: 32px;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .content h2:first-child {
+      margin-top: 0;
+    }
+
+    .content h3 {
+      font-family: var(--font-sans);
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .content p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .content ul, .content ol {
+      margin: 16px 0 16px 24px;
+      color: var(--text-secondary);
+    }
+
+    .content li {
+      margin-bottom: 8px;
+      line-height: 1.7;
+    }
+
+    .content strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .content code {
+      background: var(--bg-elevated);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    .highlight-box {
+      background: var(--bg-elevated);
+      border-left: 3px solid var(--accent);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 24px 0;
+    }
+
+    .highlight-box p {
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .last-updated {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      margin-top: 60px;
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left, .footer-right {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .footer-left a, .footer-right a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-left a:hover, .footer-right a:hover {
+      color: var(--accent-hover);
+    }
+
+    @media (max-width: 768px) {
+      .header-container, .container { padding: 0 16px; }
+      .content { padding: 32px 24px; }
+      h1 { font-size: 28px; }
+      .content h2 { font-size: 20px; }
+      .footer-content { flex-direction: column; text-align: center; }
+      .gradient-orb { width: 300px; height: 300px; right: -50px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gradient-orb"></div>
+
+  <header>
+    <div class="header-container">
+      <div class="header-content">
+        <a href="/" class="logo"><img class="logo-icon" src="icon.png" alt="Claudit"> Claudit</a>
+        <div class="nav-links">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/download.html" class="nav-link">Download</a>
+          <a href="/changelog.html" class="nav-link">Changelog</a>
+          <a href="/privacy.html" class="nav-link active">Privacy</a>
+          <a href="https://github.com/flipace/claudit" class="nav-link" title="GitHub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+          <a href="https://buymeacoffee.com/flipace" class="nav-link" title="Support" style="display: inline-flex; align-items: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">Last updated: December 23, 2025</p>
+
+      <div class="content">
+        <div class="highlight-box">
+          <p><strong>TL;DR:</strong> Claudit runs entirely on your Mac. All data stays local. Nothing is sent to external servers. Your privacy is our priority.</p>
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>
+          Claudit is a native macOS application that provides real-time usage analytics for Claude Code. 
+          This privacy policy explains how we handle your data and protect your privacy.
+        </p>
+        <p>
+          <strong>Most importantly:</strong> Claudit operates entirely locally on your Mac. All data processing 
+          happens on your machine, and no data is transmitted to external servers.
+        </p>
+
+        <h2>2. Data Collection and Storage</h2>
+        <h3>2.1 Local File Access</h3>
+        <p>
+          Claudit reads usage data from Claude Code's local JSONL files located at:
+        </p>
+        <p>
+          <code>~/.claude/projects/**/*.jsonl</code>
+        </p>
+        <p>
+          These files contain:
+        </p>
+        <ul>
+          <li>Token usage statistics (input/output tokens)</li>
+          <li>Model information</li>
+          <li>Session identifiers</li>
+          <li>Timestamps</li>
+          <li>Project paths</li>
+        </ul>
+        <p>
+          <strong>This data never leaves your Mac.</strong> It is read, processed, and displayed locally within the application.
+        </p>
+
+        <h3>2.2 Claude Configuration Files</h3>
+        <p>
+          Claudit may also read configuration files from:
+        </p>
+        <ul>
+          <li><code>~/.claude.json</code> - Global Claude Code configuration</li>
+          <li><code>~/.claude/settings.json</code> - Claude Code settings</li>
+          <li>Project-specific <code>CLAUDE.md</code> files</li>
+        </ul>
+        <p>
+          This information is used solely to display your projects, agents, plugins, and MCP server configurations 
+          within the app. None of this data is transmitted externally.
+        </p>
+
+        <h3>2.3 Application Settings</h3>
+        <p>
+          Claudit stores your preferences locally on your Mac, including:
+        </p>
+        <ul>
+          <li>Notification preferences</li>
+          <li>Display settings</li>
+          <li>Window positions and sizes</li>
+        </ul>
+        <p>
+          These settings are stored in standard macOS application support directories and are never shared.
+        </p>
+
+        <h2>3. Local HTTP Server</h2>
+        <p>
+          Claudit runs a local HTTP server on <code>localhost:3456</code> (or ports 3457-3466 if 3456 is unavailable) 
+          to receive events from Claude Code hooks. This server:
+        </p>
+        <ul>
+          <li>Only listens on localhost (127.0.0.1)</li>
+          <li>Is not accessible from other devices on your network</li>
+          <li>Does not transmit data to external servers</li>
+          <li>Is used solely for real-time notifications when Claude Code completes responses</li>
+        </ul>
+        <p>
+          The server receives minimal event data (event type, optional tool name, timestamp) and uses it only 
+          to trigger local notifications. This data is not logged or stored permanently.
+        </p>
+
+        <h2>4. No External Data Transmission</h2>
+        <div class="highlight-box">
+          <p>
+            <strong>Claudit does not:</strong>
+          </p>
+          <ul style="margin-top: 12px;">
+            <li>Send any data to external servers</li>
+            <li>Use analytics or tracking services</li>
+            <li>Collect personal information</li>
+            <li>Share data with third parties</li>
+            <li>Require internet connectivity for core functionality</li>
+          </ul>
+        </div>
+        <p>
+          The only network activity occurs when you manually:
+        </p>
+        <ul>
+          <li>Download the app from our website</li>
+          <li>Check for updates (if you enable this feature)</li>
+          <li>Access external links (GitHub, documentation, etc.)</li>
+        </ul>
+
+        <h2>5. Data Security</h2>
+        <p>
+          Since all data remains on your Mac:
+        </p>
+        <ul>
+          <li>Your usage statistics are protected by macOS file system permissions</li>
+          <li>Claudit only accesses files in standard Claude Code directories</li>
+          <li>No data is stored in cloud services or external databases</li>
+          <li>You have full control over your data</li>
+        </ul>
+        <p>
+          If you delete Claude Code's JSONL files, Claudit will simply stop displaying that historical data. 
+          The app does not maintain its own separate database.
+        </p>
+
+        <h2>6. Backup and Export Features</h2>
+        <p>
+          Claudit provides optional backup and export features that allow you to:
+        </p>
+        <ul>
+          <li>Create local backups of your Claude configuration</li>
+          <li>Export usage data for your own analysis</li>
+        </ul>
+        <p>
+          These features save files to locations you specify on your Mac. We do not have access to these files, 
+          and they are not uploaded anywhere automatically.
+        </p>
+
+        <h2>7. Open Source</h2>
+        <p>
+          Claudit is open source software. You can review the source code on 
+          <a href="https://github.com/flipace/claudit" style="color: var(--accent);">GitHub</a> to verify 
+          our privacy claims. The codebase is publicly available for inspection.
+        </p>
+
+        <h2>8. Third-Party Services</h2>
+        <p>
+          Claudit does not integrate with third-party analytics, advertising, or data collection services. 
+          The app is self-contained and operates independently.
+        </p>
+        <p>
+          If you choose to use Claude Code's AI suggestions feature within Claudit, those requests are made 
+          directly to Claude's API (as configured in your Claude Code settings), not through Claudit's servers.
+        </p>
+
+        <h2>9. Children's Privacy</h2>
+        <p>
+          Claudit is not intended for use by children under the age of 13. We do not knowingly collect 
+          personal information from children. Since we don't collect any personal information, this is 
+          not applicable, but we include it for completeness.
+        </p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>
+          We may update this privacy policy from time to time. The "Last updated" date at the top of this 
+          page indicates when the policy was last revised. We encourage you to review this policy periodically.
+        </p>
+        <p>
+          If we make material changes, we will notify you by updating the date at the top of this page. 
+          Since Claudit is a local application, significant privacy policy changes would typically coincide 
+          with app updates.
+        </p>
+
+        <h2>11. Your Rights</h2>
+        <p>
+          Since all data remains on your Mac, you have complete control:
+        </p>
+        <ul>
+          <li>You can stop using Claudit at any time</li>
+          <li>You can delete the app and all its local settings</li>
+          <li>You can delete Claude Code's JSONL files to remove historical data</li>
+          <li>You can review the source code to verify our privacy practices</li>
+        </ul>
+
+        <h2>12. Contact</h2>
+        <p>
+          If you have questions about this privacy policy or Claudit's data practices, you can:
+        </p>
+        <ul>
+          <li>Open an issue on <a href="https://github.com/flipace/claudit" style="color: var(--accent);">GitHub</a></li>
+          <li>Review the source code to verify our claims</li>
+          <li>Contact the maintainer through the GitHub repository</li>
+        </ul>
+
+        <div class="last-updated">
+          <p><strong>Summary:</strong> Claudit is designed with privacy in mind. Everything runs locally on your Mac. 
+          No data collection. No external transmission. Your data stays yours.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-left">Built by <a href="https://neschkudla.at">@flipace</a> and <a href="https://claude.ai/code">Claude Code</a></div>
+        <div class="footer-right" style="display: flex; align-items: center; gap: 12px;">
+          <a href="/privacy.html" style="color: var(--text-secondary); text-decoration: none; font-size: 13px; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Privacy</a>
+          <a href="https://github.com/flipace/claudit" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" title="GitHub" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+          <a href="https://buymeacoffee.com/flipace" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;" title="Support" onmouseover="this.style.color='#ff5f5f'" onmouseout="this.style.color='var(--text-secondary)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </a>
+          <span>&copy; 2025 Claudit</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+
