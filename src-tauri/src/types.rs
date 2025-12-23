@@ -2,6 +2,16 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Status of Claude Code / configuration availability on this machine.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ClaudeStatus {
+    pub claude_dir_exists: bool,
+    pub projects_dir_exists: bool,
+    pub claude_json_exists: bool,
+    pub settings_json_exists: bool,
+    pub claude_cli_found: bool,
+}
+
 /// Raw JSONL entry from Claude Code logs
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]

@@ -1,4 +1,4 @@
-use crate::services::{config, SettingsService};
+use crate::services::{config, get_claude_status, SettingsService};
 use crate::types::AppSettings;
 use crate::AppState;
 use std::process::Command;
@@ -119,6 +119,9 @@ fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, tauri::Err
         .map(|state| state.analytics.get_stats())
         .unwrap_or_default();
 
+    // Detect whether Claude Code data/config exists (used to show a friendly hint instead of silent zeros)
+    let claude_status = get_claude_status();
+
     // Get settings from cache (fast - no disk I/O)
     // If cache is empty, use defaults - cache will be populated on first refresh
     let cache = MENU_CACHE.lock().unwrap();
@@ -143,6 +146,18 @@ fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, tauri::Err
     )?);
 
     builder = builder.separator();
+
+    // Claude Code not installed / no data banner
+    if !claude_status.projects_dir_exists && !claude_status.claude_json_exists {
+        builder = builder.item(&MenuItem::with_id(
+            app,
+            "claude_missing",
+            "Claude Code not detected (no ~/.claude data)",
+            false,
+            None::<&str>,
+        )?);
+        builder = builder.separator();
+    }
 
     // Today's Messages (if enabled)
     if settings.show_messages {

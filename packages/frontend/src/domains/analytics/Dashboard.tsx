@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStats, useChartData, useRefreshStats, useHooksStatus, useInstallHooks, useHookPort } from "./hooks";
+import { useStats, useChartData, useRefreshStats, useHooksStatus, useInstallHooks, useHookPort, useClaudeStatus } from "./hooks";
 import {
   StatCard,
   TokenChart,
@@ -47,6 +47,12 @@ export function Dashboard() {
   const { data: hooksInstalled } = useHooksStatus();
   const { data: hookPort } = useHookPort();
   const installHooksMutation = useInstallHooks();
+  const { data: claudeStatus } = useClaudeStatus();
+
+  const claudeMissing =
+    claudeStatus &&
+    !claudeStatus.projects_dir_exists &&
+    !claudeStatus.claude_json_exists;
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
@@ -91,8 +97,25 @@ export function Dashboard() {
         </div>
       </div>
 
+      {/* Claude missing banner */}
+      {claudeMissing && (
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Claude Code not detected
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Claudit couldn’t find <span className="font-mono">~/.claude</span> usage data yet.
+                Install Claude Code and run it at least once, then come back here and hit Refresh.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hook Setup Banner */}
-      {hooksInstalled === false && (
+      {hooksInstalled === false && !claudeMissing && (
         <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

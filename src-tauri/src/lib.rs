@@ -12,7 +12,7 @@ use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 use tray::{create_tray, refresh_menu_cache, update_cached_settings, update_tray_menu};
-use types::{AnalyticsStats, AppSettings, ChartData, SessionInfo, SessionConversation, SessionSearchResult};
+use types::{AnalyticsStats, AppSettings, ChartData, ClaudeStatus, SessionInfo, SessionConversation, SessionSearchResult};
 
 /// Application state
 pub struct AppState {
@@ -108,6 +108,11 @@ async fn open_analytics_window(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn refresh_tray_menu(app: tauri::AppHandle) -> Result<(), String> {
     tray::update_tray_menu(&app).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_claude_status() -> Result<ClaudeStatus, String> {
+    Ok(services::get_claude_status())
 }
 
 // ============ Config Commands ============
@@ -421,6 +426,7 @@ pub fn run() {
             get_hook_port,
             open_analytics_window,
             refresh_tray_menu,
+            get_claude_status,
             // Config commands
             list_claude_md_files,
             get_claude_md_content,

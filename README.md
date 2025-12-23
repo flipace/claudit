@@ -21,9 +21,15 @@ A native desktop application that provides real-time usage analytics for Claude 
 
 ## Download
 
-**Currently available for macOS only.**
+**Currently available for macOS (Apple Silicon) only. Requires macOS 15.0+.**
 
-Get the latest release from [claudit.cloud.neschkudla.at](https://claudit.cloud.neschkudla.at/download.html).
+You have a few options:
+
+- **Mac App Store (recommended)**: The easiest way to install and get updates. Buying it there helps fund development.
+- **Direct download (notarized)**: Get DMG builds from [claudit.cloud.neschkudla.at](https://claudit.cloud.neschkudla.at/download.html) (useful if you can’t/don’t want to buy via the App Store). These can lag behind the App Store release because notarization + publishing takes time.
+- **Build from source**: See [Development](#development).
+
+If you want to support the project without the App Store, you can also use [Buy Me a Coffee](https://buymeacoffee.com/flipace).
 
 ## Tech Stack
 
@@ -36,11 +42,13 @@ Get the latest release from [claudit.cloud.neschkudla.at](https://claudit.cloud.
 | Data Fetching | TanStack Query |
 | Animations | Motion |
 | Icons | Lucide React |
-| Distribution | GitHub Actions + MinIO |
+| Distribution | Mac App Store + notarized direct downloads + build from source |
 
 ## Development
 
 ```bash
+# Prerequisites: Node.js (>=20), pnpm, Rust toolchain, and Tauri prerequisites (Xcode).
+#
 # Install dependencies
 pnpm install
 
@@ -66,7 +74,8 @@ claudit/
 │           │   ├── plugins/     # Claude plugins browser
 │           │   ├── config/      # Claude config viewer
 │           │   ├── analysis/    # Deep usage analysis
-│           │   └── backup/      # Backup management
+│           │   ├── backup/      # Backup management
+│           │   └── shared/      # Shared domain components
 │           ├── components/      # Reusable UI components
 │           └── lib/             # Utilities
 ├── src-tauri/              # Rust backend
@@ -111,7 +120,7 @@ Claudit runs a local HTTP server to receive events from Claude Code hooks for re
 
 ## License
 
-UNLICENSED - All rights reserved.
+MIT — see [LICENSE](./LICENSE).
 
 ---
 

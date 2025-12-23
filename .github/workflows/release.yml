@@ -69,7 +69,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           MINIO_ENDPOINT="${{ secrets.MINIO_ENDPOINT }}"
-          BUCKET="s3://claudit-releases"
+          BUCKET="${MINIO_BUCKET:-s3://claudit-releases}"
 
           for file in src-tauri/target/release/bundle/appimage/*.AppImage; do
             [ -f "$file" ] && aws --endpoint-url "$MINIO_ENDPOINT" s3 cp "$file" "$BUCKET/${RELEASE_TAG}/" || true
@@ -128,7 +128,7 @@ jobs:
         shell: bash
         run: |
           MINIO_ENDPOINT="${{ secrets.MINIO_ENDPOINT }}"
-          BUCKET="s3://claudit-releases"
+          BUCKET="${MINIO_BUCKET:-s3://claudit-releases}"
 
           for file in src-tauri/target/release/bundle/nsis/*.exe; do
             [ -f "$file" ] && aws --endpoint-url "$MINIO_ENDPOINT" s3 cp "$file" "$BUCKET/${RELEASE_TAG}/" || true

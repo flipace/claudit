@@ -29,3 +29,23 @@ npm-debug.log*
 pnpm-lock.yaml
 yarn.lock
 *.tsbuildinfo
+
+# Certificates and keys (security)
+*.p12
+*.cer
+*.key
+*.pem
+*.cert
+certificates/
+keys/
+
+# Local configuration with secrets
+config.local.*
+*.local.sh
+setup-apple-env.sh
+.env.apple
+screenshots
+
+# Local documentation
+scripts/.local/
+*.local/

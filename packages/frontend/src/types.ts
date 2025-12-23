@@ -39,6 +39,14 @@ export interface AnalyticsStats {
   last_updated: string | null;
 }
 
+export interface ClaudeStatus {
+  claude_dir_exists: boolean;
+  projects_dir_exists: boolean;
+  claude_json_exists: boolean;
+  settings_json_exists: boolean;
+  claude_cli_found: boolean;
+}
+
 // Chart data
 export interface DailyStats {
   date: string;

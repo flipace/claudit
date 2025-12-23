@@ -189,8 +189,10 @@ pub struct HookInstaller;
 impl HookInstaller {
     /// Get the Claude Code settings path
     fn settings_path() -> std::path::PathBuf {
-        let home = dirs::home_dir().expect("Could not find home directory");
-        home.join(".claude").join("settings.json")
+        dirs::home_dir()
+            .unwrap_or_default()
+            .join(".claude")
+            .join("settings.json")
     }
 
     /// Check if hooks are already installed

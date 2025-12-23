@@ -110,8 +110,8 @@ if [ "$SKIP_UPLOAD" = false ]; then
     warn "MinIO client (mc) not installed. Skipping upload."
     warn "Install with: brew install minio/stable/mc"
   else
-    MINIO_ALIAS="claudit"
-    BUCKET="claudit-releases"
+    MINIO_ALIAS="${MINIO_ALIAS:-claudit}"
+    BUCKET="${MINIO_BUCKET:-claudit-releases}"
     RELEASE_TAG="v$VERSION"
     
     log "Uploading to MinIO..."
@@ -121,7 +121,11 @@ if [ "$SKIP_UPLOAD" = false ]; then
     done
     success "Upload complete!"
     echo ""
-    log "Release available at: https://claudit-minio.cloud.neschkudla.at/$BUCKET/$RELEASE_TAG/"
+    if [ -n "${MINIO_ENDPOINT:-}" ]; then
+      log "Release available at: ${MINIO_ENDPOINT}/$BUCKET/$RELEASE_TAG/"
+    else
+      log "Release uploaded to: $MINIO_ALIAS/$BUCKET/$RELEASE_TAG/"
+    fi
   fi
 else
   warn "Skipping upload (--skip-upload)"

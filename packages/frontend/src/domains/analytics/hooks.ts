@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import type { AnalyticsStats, ChartData, AppSettings, ModelPricing } from "../../types";
+import type { AnalyticsStats, ChartData, AppSettings, ModelPricing, ClaudeStatus } from "../../types";
 
 export function useStats() {
   return useQuery({
@@ -79,5 +79,13 @@ export function useModelPricing() {
     queryKey: ["model-pricing"],
     queryFn: () => invoke<ModelPricing[]>("get_model_pricing"),
     staleTime: Infinity, // Pricing rarely changes
+  });
+}
+
+export function useClaudeStatus() {
+  return useQuery({
+    queryKey: ["claude-status"],
+    queryFn: () => invoke<ClaudeStatus>("get_claude_status"),
+    staleTime: 60_000,
   });
 }

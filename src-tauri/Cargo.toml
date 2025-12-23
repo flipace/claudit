@@ -4,6 +4,7 @@ version = "0.4.1"
 description = "Claude Code usage monitor with analytics dashboard"
 authors = ["flipace <neschkudla@gmail.com>"]
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "claudit_lib"

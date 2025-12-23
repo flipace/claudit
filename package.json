@@ -3,7 +3,7 @@
   "version": "0.4.1",
   "description": "A native desktop app for real-time Claude Code usage analytics",
   "author": "flipace <neschkudla@gmail.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "engines": {
