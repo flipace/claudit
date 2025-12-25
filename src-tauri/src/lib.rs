@@ -143,6 +143,11 @@ async fn get_agent_or_command_content(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+async fn list_directory_files(path: String) -> Result<Vec<services::config::DirectoryFile>, String> {
+    services::config::list_directory_files(&path)
+}
+
+#[tauri::command]
 async fn get_installed_plugins() -> Result<Vec<PluginInfo>, String> {
     services::config::get_installed_plugins()
 }
@@ -433,6 +438,7 @@ pub fn run() {
             list_agents,
             list_commands,
             get_agent_or_command_content,
+            list_directory_files,
             get_installed_plugins,
             get_mcp_servers,
             get_mcp_config_path,

@@ -244,6 +244,54 @@ pub fn get_agent_or_command_content(path: &str) -> Result<String, String> {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DirectoryFile {
+    pub name: String,
+    pub path: String,
+    #[serde(rename = "isMarkdown")]
+    pub is_markdown: bool,
+}
+
+/// List files in an agent/command directory
+pub fn list_directory_files(path: &str) -> Result<Vec<DirectoryFile>, String> {
+    let path = PathBuf::from(path);
+
+    if !path.is_dir() {
+        return Err("Not a directory".to_string());
+    }
+
+    let mut files: Vec<DirectoryFile> = Vec::new();
+
+    if let Ok(entries) = fs::read_dir(&path) {
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_file() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let is_markdown = entry_path
+                    .extension()
+                    .map_or(false, |e| e == "md" || e == "markdown");
+
+                files.push(DirectoryFile {
+                    name,
+                    path: entry_path.to_string_lossy().to_string(),
+                    is_markdown,
+                });
+            }
+        }
+    }
+
+    // Sort: markdown files first, then alphabetically
+    files.sort_by(|a, b| {
+        match (a.is_markdown, b.is_markdown) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        }
+    });
+
+    Ok(files)
+}
+
 // ============ Plugins & MCP ============
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1747,6 +1795,13 @@ pub fn open_folder(path: &str) -> Result<(), String> {
     } else {
         expanded_path.clone()
     };
+
+    // Create directory if it doesn't exist
+    let dir_path_obj = Path::new(&dir_path);
+    if !dir_path_obj.exists() {
+        fs::create_dir_all(&dir_path)
+            .map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
 
     #[cfg(target_os = "macos")]
     {
