@@ -178,6 +178,11 @@ async fn remove_mcp_server(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn update_mcp_server(name: String, config_json: String) -> Result<(), String> {
+    services::config::update_mcp_server(&name, &config_json)
+}
+
+#[tauri::command]
 async fn list_projects() -> Result<Vec<ProjectInfo>, String> {
     services::config::list_projects()
 }
@@ -445,6 +450,7 @@ pub fn run() {
             get_mcp_config,
             add_mcp_server,
             remove_mcp_server,
+            update_mcp_server,
             list_projects,
             get_project_details,
             get_project_commands,

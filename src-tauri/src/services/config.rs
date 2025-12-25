@@ -437,8 +437,26 @@ pub fn get_mcp_servers() -> Result<Vec<McpServer>, String> {
         }
     }
 
-    // Read project-level MCP servers from ~/.claude.json
+    // Read global MCP servers from ~/.claude.json (root-level mcpServers)
     if let Ok(claude_json) = read_claude_json() {
+        if let Some(mcp_servers) = claude_json.mcp_servers {
+            for (name, server_config) in mcp_servers {
+                // Skip if already added from settings.json (avoid duplicates)
+                if servers.iter().any(|s| s.name == name && s.project_path.is_none()) {
+                    continue;
+                }
+                servers.push(McpServer {
+                    name,
+                    server_type: server_config.server_type.unwrap_or_else(|| "stdio".to_string()),
+                    command: server_config.command,
+                    url: server_config.url,
+                    args: server_config.args,
+                    project_path: None, // Global server
+                });
+            }
+        }
+
+        // Read project-level MCP servers from ~/.claude.json
         if let Some(projects) = claude_json.projects {
             for (project_path, project_config) in projects {
                 if let Some(mcp_servers) = project_config.mcp_servers {
@@ -463,10 +481,10 @@ pub fn get_mcp_servers() -> Result<Vec<McpServer>, String> {
     Ok(servers)
 }
 
-/// Get the path to the global MCP config file (settings.json)
+/// Get the path to the main Claude config file (~/.claude.json)
 pub fn get_mcp_config_path() -> Result<String, String> {
-    let settings_path = get_claude_dir().join("settings.json");
-    Ok(settings_path.to_string_lossy().to_string())
+    let claude_json_path = get_claude_json_path();
+    Ok(claude_json_path.to_string_lossy().to_string())
 }
 
 /// Read the current MCP servers config from settings.json
@@ -556,10 +574,26 @@ pub fn add_mcp_server(name: &str, config_json: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Remove an MCP server from settings.json
+/// Remove an MCP server from ~/.claude.json or settings.json
 pub fn remove_mcp_server(name: &str) -> Result<(), String> {
-    let settings_path = get_claude_dir().join("settings.json");
+    // Try to remove from ~/.claude.json first
+    let claude_json_path = get_claude_json_path();
+    if claude_json_path.exists() {
+        let content = fs::read_to_string(&claude_json_path).map_err(|e| e.to_string())?;
+        let mut claude_json: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
+        if let Some(serde_json::Value::Object(ref mut mcp_servers)) = claude_json.get_mut("mcpServers") {
+            if mcp_servers.contains_key(name) {
+                mcp_servers.remove(name);
+                let formatted = serde_json::to_string_pretty(&claude_json).map_err(|e| e.to_string())?;
+                fs::write(&claude_json_path, formatted).map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+        }
+    }
+
+    // Fall back to settings.json
+    let settings_path = get_claude_dir().join("settings.json");
     if !settings_path.exists() {
         return Ok(());
     }
@@ -567,12 +601,56 @@ pub fn remove_mcp_server(name: &str) -> Result<(), String> {
     let content = fs::read_to_string(&settings_path).map_err(|e| e.to_string())?;
     let mut settings: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
-    // Remove the server
     if let Some(serde_json::Value::Object(ref mut mcp_servers)) = settings.get_mut("mcpServers") {
         mcp_servers.remove(name);
     }
 
-    // Write back
+    let formatted = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    fs::write(&settings_path, formatted).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Update an MCP server in ~/.claude.json or settings.json
+pub fn update_mcp_server(name: &str, config_json: &str) -> Result<(), String> {
+    let server_config: serde_json::Value = serde_json::from_str(config_json)
+        .map_err(|e| format!("Invalid JSON: {}", e))?;
+
+    // Try to update in ~/.claude.json first
+    let claude_json_path = get_claude_json_path();
+    if claude_json_path.exists() {
+        let content = fs::read_to_string(&claude_json_path).map_err(|e| e.to_string())?;
+        let mut claude_json: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+        if let Some(serde_json::Value::Object(ref mut mcp_servers)) = claude_json.get_mut("mcpServers") {
+            if mcp_servers.contains_key(name) {
+                mcp_servers.insert(name.to_string(), server_config);
+                let formatted = serde_json::to_string_pretty(&claude_json).map_err(|e| e.to_string())?;
+                fs::write(&claude_json_path, formatted).map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+        }
+    }
+
+    // Fall back to settings.json
+    let settings_path = get_claude_dir().join("settings.json");
+    let mut settings: serde_json::Value = if settings_path.exists() {
+        let content = fs::read_to_string(&settings_path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&content).map_err(|e| e.to_string())?
+    } else {
+        serde_json::json!({})
+    };
+
+    if !settings.get("mcpServers").is_some() {
+        if let serde_json::Value::Object(ref mut obj) = settings {
+            obj.insert("mcpServers".to_string(), serde_json::json!({}));
+        }
+    }
+
+    if let Some(serde_json::Value::Object(ref mut mcp_servers)) = settings.get_mut("mcpServers") {
+        mcp_servers.insert(name.to_string(), server_config);
+    }
+
     let formatted = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     fs::write(&settings_path, formatted).map_err(|e| e.to_string())?;
 
@@ -1672,6 +1750,8 @@ pub fn get_config_git_status() -> Result<GitStatus, String> {
 
 #[derive(Debug, Clone, Deserialize)]
 struct ClaudeJson {
+    #[serde(rename = "mcpServers")]
+    mcp_servers: Option<HashMap<String, McpServerConfig>>,
     projects: Option<HashMap<String, ProjectConfig>>,
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -37,14 +37,18 @@ interface McpServer {
   projectPath?: string;
 }
 
-export function PluginsPage() {
-  const [activeTab, setActiveTab] = useState<"plugins" | "mcp">("plugins");
-  const [addServerModal, setAddServerModal] = useState(false);
-  const [serverName, setServerName] = useState("");
-  const [serverConfig, setServerConfig] = useState(`{
+const DEFAULT_SERVER_CONFIG = `{
   "command": "npx",
   "args": ["-y", "@modelcontextprotocol/server-name"]
-}`);
+}`;
+
+export function PluginsPage() {
+  const [activeTab, setActiveTab] = useState<"plugins" | "mcp">("plugins");
+  const [serverModalOpen, setServerModalOpen] = useState(false);
+  const [editingServer, setEditingServer] = useState<McpServer | null>(null);
+  const [serverName, setServerName] = useState("");
+  const [serverConfig, setServerConfig] = useState(DEFAULT_SERVER_CONFIG);
+  const [removingServerName, setRemovingServerName] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -74,12 +78,17 @@ export function PluginsPage() {
       invoke("add_mcp_server", { name, configJson }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
-      setAddServerModal(false);
-      setServerName("");
-      setServerConfig(`{
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-name"]
-}`);
+      closeServerModal();
+    },
+  });
+
+  // Update MCP server mutation
+  const updateServerMutation = useMutation({
+    mutationFn: ({ name, configJson }: { name: string; configJson: string }) =>
+      invoke("update_mcp_server", { name, configJson }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+      closeServerModal();
     },
   });
 
@@ -88,8 +97,55 @@ export function PluginsPage() {
     mutationFn: (name: string) => invoke("remove_mcp_server", { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+      setRemovingServerName(null);
+    },
+    onError: () => {
+      setRemovingServerName(null);
     },
   });
+
+  const handleRemoveServer = (name: string) => {
+    setRemovingServerName(name);
+    removeServerMutation.mutate(name);
+  };
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && serverModalOpen) {
+        closeServerModal();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [serverModalOpen]);
+
+  const closeServerModal = () => {
+    setServerModalOpen(false);
+    setEditingServer(null);
+    setServerName("");
+    setServerConfig(DEFAULT_SERVER_CONFIG);
+  };
+
+  const openAddModal = () => {
+    setEditingServer(null);
+    setServerName("");
+    setServerConfig(DEFAULT_SERVER_CONFIG);
+    setServerModalOpen(true);
+  };
+
+  const openEditModal = (server: McpServer) => {
+    setEditingServer(server);
+    setServerName(server.name);
+    // Build config JSON from all known server properties (excluding metadata)
+    const { name: _, type: __, projectPath: ___, ...configFields } = server;
+    // Filter out undefined values
+    const config = Object.fromEntries(
+      Object.entries(configFields).filter(([, v]) => v !== undefined)
+    );
+    setServerConfig(JSON.stringify(config, null, 2));
+    setServerModalOpen(true);
+  };
 
   const globalMcpServers = mcpServers?.filter((s) => !s.projectPath) || [];
   const projectMcpServers = mcpServers?.filter((s) => s.projectPath) || [];
@@ -111,16 +167,34 @@ export function PluginsPage() {
     }
   };
 
-  const handleAddServer = () => {
-    if (!serverName.trim()) return;
-    addServerMutation.mutate({ name: serverName, configJson: serverConfig });
+  const validateJson = (json: string): string | null => {
+    try {
+      JSON.parse(json);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : "Invalid JSON";
+    }
   };
+
+  const jsonError = serverConfig ? validateJson(serverConfig) : null;
+
+  const handleSaveServer = () => {
+    if (!serverName.trim() || jsonError) return;
+    if (editingServer) {
+      updateServerMutation.mutate({ name: serverName, configJson: serverConfig });
+    } else {
+      addServerMutation.mutate({ name: serverName, configJson: serverConfig });
+    }
+  };
+
+  const isModalLoading = addServerMutation.isPending || updateServerMutation.isPending;
+  const modalError = addServerMutation.error || updateServerMutation.error;
 
   return (
     <div className="h-full flex flex-col">
       <PageHeader
         title="Plugins & MCP Servers"
-        description="Plugins extend Claude Code with new capabilities. MCP (Model Context Protocol) servers provide tools and context to Claude. Configure them in ~/.claude/settings.json or per-project."
+        description="Plugins extend Claude Code with new capabilities. MCP (Model Context Protocol) servers provide tools and context to Claude. Configure them in ~/.claude.json or per-project."
       />
       {/* Tabs Header */}
       <div className="px-4 py-3 border-b border-border bg-zinc-900/30">
@@ -258,7 +332,7 @@ export function PluginsPage() {
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setAddServerModal(true)}
+                onClick={openAddModal}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -287,8 +361,9 @@ export function PluginsPage() {
                           key={server.name}
                           server={server}
                           onOpenFolder={handleOpenFolder}
-                          onRemove={() => removeServerMutation.mutate(server.name)}
-                          isRemoving={removeServerMutation.isPending}
+                          onEdit={() => openEditModal(server)}
+                          onRemove={() => handleRemoveServer(server.name)}
+                          isRemoving={removingServerName === server.name}
                         />
                       ))}
                     </div>
@@ -326,15 +401,15 @@ export function PluginsPage() {
         )}
       </div>
 
-      {/* Add Server Modal */}
+      {/* Add/Edit Server Modal */}
       <AnimatePresence>
-        {addServerModal && (
+        {serverModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            onClick={() => setAddServerModal(false)}
+            onClick={closeServerModal}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -347,10 +422,10 @@ export function PluginsPage() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
                 <div className="flex items-center gap-2">
                   <Server className="w-5 h-5 text-blue-500" />
-                  <h3 className="font-medium">Add MCP Server</h3>
+                  <h3 className="font-medium">{editingServer ? "Edit MCP Server" : "Add MCP Server"}</h3>
                 </div>
                 <button
-                  onClick={() => setAddServerModal(false)}
+                  onClick={closeServerModal}
                   className="p-1.5 text-muted-foreground hover:text-foreground rounded hover:bg-zinc-800 transition-colors"
                 >
                   <X className="w-4 h-4" />
@@ -366,27 +441,40 @@ export function PluginsPage() {
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
                     placeholder="my-mcp-server"
-                    className="w-full px-3 py-2 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                    disabled={!!editingServer}
+                    className="w-full px-3 py-2 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   />
+                  {editingServer && (
+                    <p className="text-xs text-muted-foreground mt-1">Server name cannot be changed</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Server Config (JSON)</label>
                   <textarea
                     value={serverConfig}
                     onChange={(e) => setServerConfig(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 text-sm font-mono bg-zinc-800/50 border border-zinc-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                    rows={8}
+                    className={cn(
+                      "w-full px-3 py-2 text-sm font-mono bg-zinc-800/50 border rounded-md focus:outline-none focus:ring-1 resize-none",
+                      jsonError
+                        ? "border-red-500/50 focus:ring-red-500"
+                        : "border-zinc-700/50 focus:ring-primary"
+                    )}
                   />
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Paste the MCP server configuration JSON. Common fields: command, args, url, env
-                  </p>
+                  {jsonError ? (
+                    <p className="text-xs text-red-400 mt-1.5">{jsonError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Server configuration JSON. Common fields: command, args, url, env
+                    </p>
+                  )}
                 </div>
 
-                {addServerMutation.isError && (
+                {modalError && (
                   <div className="text-sm text-red-400 bg-red-400/10 px-3 py-2 rounded-md">
-                    {addServerMutation.error instanceof Error
-                      ? addServerMutation.error.message
-                      : "Failed to add server"}
+                    {modalError instanceof Error
+                      ? modalError.message
+                      : "Failed to save server"}
                   </div>
                 )}
               </div>
@@ -394,18 +482,18 @@ export function PluginsPage() {
               {/* Modal Footer */}
               <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-zinc-800">
                 <button
-                  onClick={() => setAddServerModal(false)}
+                  onClick={closeServerModal}
                   className="px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleAddServer}
-                  disabled={!serverName.trim() || addServerMutation.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  onClick={handleSaveServer}
+                  disabled={!serverName.trim() || !!jsonError || isModalLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {addServerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Add Server
+                  {isModalLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {editingServer ? "Save Changes" : "Add Server"}
                 </button>
               </div>
             </motion.div>
@@ -419,26 +507,36 @@ export function PluginsPage() {
 interface McpServerCardProps {
   server: McpServer;
   onOpenFolder: (path: string) => void;
+  onEdit?: () => void;
   onRemove?: () => void;
   isRemoving?: boolean;
 }
 
-function McpServerCard({ server, onOpenFolder, onRemove, isRemoving }: McpServerCardProps) {
+function McpServerCard({ server, onOpenFolder, onEdit, onRemove, isRemoving }: McpServerCardProps) {
   return (
-    <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+    <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50 overflow-hidden">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
             <Server className="w-5 h-5 text-blue-500" />
           </div>
-          <div>
-            <div className="font-medium">{server.name}</div>
+          <div className="min-w-0">
+            <div className="font-medium truncate">{server.name}</div>
             <div className="text-xs text-muted-foreground">
               {server.type === "stdio" ? "stdio" : "HTTP"}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded hover:bg-zinc-800/50 transition-colors"
+              title="Edit Server"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
           {onRemove && (
             <button
               onClick={onRemove}
@@ -474,17 +572,17 @@ function McpServerCard({ server, onOpenFolder, onRemove, isRemoving }: McpServer
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
         {server.command && (
-          <div className="font-mono bg-zinc-800/50 px-2 py-1 rounded truncate">
+          <div className="font-mono bg-zinc-800/50 px-2 py-1.5 rounded break-all whitespace-pre-wrap">
             {server.command} {server.args?.join(" ")}
           </div>
         )}
         {server.url && (
-          <div className="truncate">{server.url}</div>
+          <div className="break-all">{server.url}</div>
         )}
         {server.projectPath && (
-          <div className="flex items-center gap-1 mt-2">
-            <FolderOpen className="w-3 h-3" />
-            <span className="truncate">{server.projectPath}</span>
+          <div className="flex items-center gap-1 mt-2 min-w-0">
+            <FolderOpen className="w-3 h-3 shrink-0" />
+            <span className="break-all">{server.projectPath}</span>
           </div>
         )}
       </div>
