@@ -21,13 +21,10 @@ A native desktop application that provides real-time usage analytics for Claude 
 
 **Currently available for macOS (Apple Silicon) only. Requires macOS 15.0+.**
 
-You have a few options:
+- **Direct download**: Get DMG builds from [claudit.cloud.neschkudla.at](https://claudit.cloud.neschkudla.at/download.html)
+- **Build from source**: See [Development](#development)
 
-- **Mac App Store (recommended)**: The easiest way to install and get updates. Buying it there helps fund development.
-- **Direct download (notarized)**: Get DMG builds from [claudit.cloud.neschkudla.at](https://claudit.cloud.neschkudla.at/download.html) (useful if you can’t/don’t want to buy via the App Store). These can lag behind the App Store release because notarization + publishing takes time.
-- **Build from source**: See [Development](#development).
-
-If you want to support the project without the App Store, you can also use [Buy Me a Coffee](https://buymeacoffee.com/flipace).
+If you want to support the project, you can use [Buy Me a Coffee](https://buymeacoffee.com/flipace).
 
 ## Tech Stack
 
@@ -40,7 +37,7 @@ If you want to support the project without the App Store, you can also use [Buy 
 | Data Fetching | TanStack Query |
 | Animations | Motion |
 | Icons | Lucide React |
-| Distribution | Mac App Store + notarized direct downloads + build from source |
+| Distribution | Direct download + build from source |
 
 ## Development
 
