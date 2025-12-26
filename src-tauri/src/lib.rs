@@ -203,6 +203,16 @@ async fn get_project_mcp_servers(project_path: String) -> Result<Vec<McpServer>,
 }
 
 #[tauri::command]
+async fn update_project_mcp_server(project_path: String, name: String, config_json: String) -> Result<(), String> {
+    services::config::update_project_mcp_server(&project_path, &name, &config_json)
+}
+
+#[tauri::command]
+async fn remove_project_mcp_server(project_path: String, name: String) -> Result<(), String> {
+    services::config::remove_project_mcp_server(&project_path, &name)
+}
+
+#[tauri::command]
 async fn set_project_image(project_path: String, image_source_path: String) -> Result<String, String> {
     services::config::set_project_image(&project_path, &image_source_path)
 }
@@ -455,6 +465,8 @@ pub fn run() {
             get_project_details,
             get_project_commands,
             get_project_mcp_servers,
+            update_project_mcp_server,
+            remove_project_mcp_server,
             set_project_image,
             remove_project_image,
             analyze_chat_patterns,

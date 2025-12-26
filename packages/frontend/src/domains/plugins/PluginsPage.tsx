@@ -8,13 +8,13 @@ import {
   Check,
   X,
   ExternalLink,
-  FolderOpen,
   Plus,
   Edit,
   Trash2,
   Loader2,
 } from "lucide-react";
 import { PageHeader } from "../../components/PageHeader";
+import { McpServerCard, type McpServer } from "../../components/McpServerCard";
 import { cn } from "../../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -28,15 +28,6 @@ interface PluginInfo {
   enabled: boolean;
 }
 
-interface McpServer {
-  name: string;
-  type: string;
-  command?: string;
-  url?: string;
-  args?: string[];
-  projectPath?: string;
-}
-
 const DEFAULT_SERVER_CONFIG = `{
   "command": "npx",
   "args": ["-y", "@modelcontextprotocol/server-name"]
@@ -48,7 +39,8 @@ export function PluginsPage() {
   const [editingServer, setEditingServer] = useState<McpServer | null>(null);
   const [serverName, setServerName] = useState("");
   const [serverConfig, setServerConfig] = useState(DEFAULT_SERVER_CONFIG);
-  const [removingServerName, setRemovingServerName] = useState<string | null>(null);
+  const [removingServer, setRemovingServer] = useState<{ name: string; projectPath?: string } | null>(null);
+  const [deleteConfirmServer, setDeleteConfirmServer] = useState<McpServer | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -82,7 +74,7 @@ export function PluginsPage() {
     },
   });
 
-  // Update MCP server mutation
+  // Update MCP server mutation (global)
   const updateServerMutation = useMutation({
     mutationFn: ({ name, configJson }: { name: string; configJson: string }) =>
       invoke("update_mcp_server", { name, configJson }),
@@ -92,21 +84,54 @@ export function PluginsPage() {
     },
   });
 
-  // Remove MCP server mutation
+  // Update project MCP server mutation
+  const updateProjectServerMutation = useMutation({
+    mutationFn: ({ projectPath, name, configJson }: { projectPath: string; name: string; configJson: string }) =>
+      invoke("update_project_mcp_server", { projectPath, name, configJson }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+      closeServerModal();
+    },
+  });
+
+  // Remove MCP server mutation (global)
   const removeServerMutation = useMutation({
     mutationFn: (name: string) => invoke("remove_mcp_server", { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
-      setRemovingServerName(null);
+      setRemovingServer(null);
     },
     onError: () => {
-      setRemovingServerName(null);
+      setRemovingServer(null);
     },
   });
 
-  const handleRemoveServer = (name: string) => {
-    setRemovingServerName(name);
-    removeServerMutation.mutate(name);
+  // Remove project MCP server mutation
+  const removeProjectServerMutation = useMutation({
+    mutationFn: ({ projectPath, name }: { projectPath: string; name: string }) =>
+      invoke("remove_project_mcp_server", { projectPath, name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+      setRemovingServer(null);
+    },
+    onError: () => {
+      setRemovingServer(null);
+    },
+  });
+
+  const handleRemoveServer = (server: McpServer) => {
+    setDeleteConfirmServer(server);
+  };
+
+  const confirmRemoveServer = () => {
+    if (!deleteConfirmServer) return;
+    setRemovingServer({ name: deleteConfirmServer.name, projectPath: deleteConfirmServer.projectPath });
+    if (deleteConfirmServer.projectPath) {
+      removeProjectServerMutation.mutate({ projectPath: deleteConfirmServer.projectPath, name: deleteConfirmServer.name });
+    } else {
+      removeServerMutation.mutate(deleteConfirmServer.name);
+    }
+    setDeleteConfirmServer(null);
   };
 
   // Close modal on Escape key
@@ -181,14 +206,28 @@ export function PluginsPage() {
   const handleSaveServer = () => {
     if (!serverName.trim() || jsonError) return;
     if (editingServer) {
-      updateServerMutation.mutate({ name: serverName, configJson: serverConfig });
+      if (editingServer.projectPath) {
+        updateProjectServerMutation.mutate({
+          projectPath: editingServer.projectPath,
+          name: serverName,
+          configJson: serverConfig,
+        });
+      } else {
+        updateServerMutation.mutate({ name: serverName, configJson: serverConfig });
+      }
     } else {
       addServerMutation.mutate({ name: serverName, configJson: serverConfig });
     }
   };
 
-  const isModalLoading = addServerMutation.isPending || updateServerMutation.isPending;
-  const modalError = addServerMutation.error || updateServerMutation.error;
+  const isModalLoading =
+    addServerMutation.isPending ||
+    updateServerMutation.isPending ||
+    updateProjectServerMutation.isPending;
+  const modalError =
+    addServerMutation.error ||
+    updateServerMutation.error ||
+    updateProjectServerMutation.error;
 
   return (
     <div className="h-full flex flex-col">
@@ -362,8 +401,8 @@ export function PluginsPage() {
                           server={server}
                           onOpenFolder={handleOpenFolder}
                           onEdit={() => openEditModal(server)}
-                          onRemove={() => handleRemoveServer(server.name)}
-                          isRemoving={removingServerName === server.name}
+                          onRemove={() => handleRemoveServer(server)}
+                          isRemoving={removingServer?.name === server.name && !removingServer?.projectPath}
                         />
                       ))}
                     </div>
@@ -382,6 +421,12 @@ export function PluginsPage() {
                           key={`${server.projectPath}-${server.name}`}
                           server={server}
                           onOpenFolder={handleOpenFolder}
+                          onEdit={() => openEditModal(server)}
+                          onRemove={() => handleRemoveServer(server)}
+                          isRemoving={
+                            removingServer?.name === server.name &&
+                            removingServer?.projectPath === server.projectPath
+                          }
                         />
                       ))}
                     </div>
@@ -500,92 +545,60 @@ export function PluginsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
 
-interface McpServerCardProps {
-  server: McpServer;
-  onOpenFolder: (path: string) => void;
-  onEdit?: () => void;
-  onRemove?: () => void;
-  isRemoving?: boolean;
-}
-
-function McpServerCard({ server, onOpenFolder, onEdit, onRemove, isRemoving }: McpServerCardProps) {
-  return (
-    <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50 overflow-hidden">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-            <Server className="w-5 h-5 text-blue-500" />
-          </div>
-          <div className="min-w-0">
-            <div className="font-medium truncate">{server.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {server.type === "stdio" ? "stdio" : "HTTP"}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded hover:bg-zinc-800/50 transition-colors"
-              title="Edit Server"
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmServer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setDeleteConfirmServer(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden m-4"
             >
-              <Edit className="w-4 h-4" />
-            </button>
-          )}
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              disabled={isRemoving}
-              className="p-1.5 text-red-400 hover:text-red-300 rounded hover:bg-red-400/10 transition-colors disabled:opacity-50"
-              title="Remove Server"
-            >
-              {isRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            </button>
-          )}
-          {server.projectPath && (
-            <button
-              onClick={() => onOpenFolder(server.projectPath!)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded hover:bg-zinc-800/50 transition-colors"
-              title="Open Project Folder"
-            >
-              <FolderOpen className="w-4 h-4" />
-            </button>
-          )}
-          {server.url && (
-            <a
-              href={server.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded hover:bg-zinc-800/50 transition-colors"
-              title="Open URL"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-        {server.command && (
-          <div className="font-mono bg-zinc-800/50 px-2 py-1.5 rounded break-all whitespace-pre-wrap">
-            {server.command} {server.args?.join(" ")}
-          </div>
+              <div className="p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Remove MCP Server</h3>
+                    <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                  </div>
+                </div>
+                <p className="text-sm mb-4">
+                  Are you sure you want to remove <span className="font-medium text-foreground">{deleteConfirmServer.name}</span>
+                  {deleteConfirmServer.projectPath && (
+                    <span className="text-muted-foreground"> from project {deleteConfirmServer.projectPath.split("/").pop()}</span>
+                  )}
+                  ?
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setDeleteConfirmServer(null)}
+                    className="px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmRemoveServer}
+                    className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                  >
+                    Remove Server
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
-        {server.url && (
-          <div className="break-all">{server.url}</div>
-        )}
-        {server.projectPath && (
-          <div className="flex items-center gap-1 mt-2 min-w-0">
-            <FolderOpen className="w-3 h-3 shrink-0" />
-            <span className="break-all">{server.projectPath}</span>
-          </div>
-        )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

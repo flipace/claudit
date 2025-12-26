@@ -657,6 +657,74 @@ pub fn update_mcp_server(name: &str, config_json: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Update an MCP server in a specific project's config
+pub fn update_project_mcp_server(project_path: &str, name: &str, config_json: &str) -> Result<(), String> {
+    let server_config: serde_json::Value = serde_json::from_str(config_json)
+        .map_err(|e| format!("Invalid JSON: {}", e))?;
+
+    let claude_json_path = get_claude_json_path();
+    if !claude_json_path.exists() {
+        return Err("Claude config file not found".to_string());
+    }
+
+    let content = fs::read_to_string(&claude_json_path).map_err(|e| e.to_string())?;
+    let mut claude_json: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    // Navigate to projects -> project_path -> mcpServers
+    let projects = claude_json.get_mut("projects")
+        .and_then(|p| p.as_object_mut())
+        .ok_or_else(|| "Projects section not found in config".to_string())?;
+
+    let project = projects.get_mut(project_path)
+        .and_then(|p| p.as_object_mut())
+        .ok_or_else(|| format!("Project '{}' not found in config", project_path))?;
+
+    let mcp_servers = project.entry("mcpServers")
+        .or_insert_with(|| serde_json::json!({}))
+        .as_object_mut()
+        .ok_or_else(|| "Invalid mcpServers format".to_string())?;
+
+    mcp_servers.insert(name.to_string(), server_config);
+
+    let formatted = serde_json::to_string_pretty(&claude_json).map_err(|e| e.to_string())?;
+    fs::write(&claude_json_path, formatted).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Remove an MCP server from a specific project's config
+pub fn remove_project_mcp_server(project_path: &str, name: &str) -> Result<(), String> {
+    let claude_json_path = get_claude_json_path();
+    if !claude_json_path.exists() {
+        return Err("Claude config file not found".to_string());
+    }
+
+    let content = fs::read_to_string(&claude_json_path).map_err(|e| e.to_string())?;
+    let mut claude_json: serde_json::Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    // Navigate to projects -> project_path -> mcpServers
+    let projects = claude_json.get_mut("projects")
+        .and_then(|p| p.as_object_mut())
+        .ok_or_else(|| "Projects section not found in config".to_string())?;
+
+    let project = projects.get_mut(project_path)
+        .and_then(|p| p.as_object_mut())
+        .ok_or_else(|| format!("Project '{}' not found in config", project_path))?;
+
+    if let Some(mcp_servers) = project.get_mut("mcpServers").and_then(|m| m.as_object_mut()) {
+        if mcp_servers.remove(name).is_none() {
+            return Err(format!("MCP server '{}' not found in project", name));
+        }
+    } else {
+        return Err("No MCP servers configured for this project".to_string());
+    }
+
+    let formatted = serde_json::to_string_pretty(&claude_json).map_err(|e| e.to_string())?;
+    fs::write(&claude_json_path, formatted).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 // ============ Projects ============
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

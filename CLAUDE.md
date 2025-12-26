@@ -249,6 +249,29 @@ fn encode_path_to_folder(path: &str) -> String {
 - Keep components simple and composable
 - Glassy/frosted look: `bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50`
 
+### Icon Color Conventions
+
+| Entity Type | Color | Usage |
+|-------------|-------|-------|
+| Commands/Terminal | `text-emerald-500` | Action-oriented items, slash commands |
+| Agents/Bots | `text-primary` | Primary feature (Bot icon) |
+| MCP Servers | `text-blue-500` | Infrastructure/services (Server icon) |
+| Plugins (enabled) | `text-emerald-500` | Active state |
+| Projects/Folders | `text-amber-500` | Directories, project folders |
+
+### Layout Patterns
+
+**2-column master-detail**: Use for items with content to preview (agents, commands)
+- Left panel: `w-80 shrink-0 border-r border-border`
+- Right panel: `flex-1 min-w-0 flex flex-col bg-zinc-900/30`
+- List items: `gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50`
+
+**Card grid**: Use for items without preview content (MCP servers, plugins)
+- Grid: `grid gap-3 md:grid-cols-2`
+- Cards: `p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/50`
+
+**Tab styling**: `bg-zinc-800/50 rounded-lg p-0.5` container with active state `bg-primary text-primary-foreground`
+
 ## Release Checklist
 
 **IMPORTANT: Always update ALL changelogs when releasing a new version!**
