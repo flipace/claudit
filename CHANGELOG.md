@@ -2,6 +2,20 @@
 
 All notable changes to Claudit will be documented in this file.
 
+## [0.5.0] - 2025-12-26
+
+### Added
+- **MCP Server Editing**: Edit global MCP server configurations directly within Claudit
+- **Nested Folder Commands**: Display commands from nested folders in the commands view
+- **Project-Level Views**: Updated MCP servers and commands view on projects level
+
+### Fixed
+- Layout issues on agents page
+- Projects commands folder now opens correctly
+
+### Changed
+- License changed to MIT
+
 ## [0.4.1] - 2025-12-23
 
 ### Added
