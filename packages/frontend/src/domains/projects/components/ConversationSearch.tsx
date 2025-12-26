@@ -65,9 +65,18 @@ export function ConversationSearch({
         className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
       />
       {searchQuery && (
-        <span className="text-xs text-muted-foreground flex-shrink-0">
-          {matchCount > 0 ? `${currentMatchIndex + 1}/${matchCount}` : "No matches"}
-        </span>
+        <>
+          <button
+            onClick={() => onSearchChange("")}
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            title="Clear search"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            {matchCount > 0 ? `${currentMatchIndex + 1}/${matchCount}` : "No matches"}
+          </span>
+        </>
       )}
       <div className="flex items-center gap-1 flex-shrink-0">
         <button

@@ -1220,9 +1220,16 @@ export function ProjectsPage() {
                         onChange={(e) => setSessionSearchQuery(e.target.value)}
                         className="w-full pl-8 pr-8 py-2 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                       />
-                      {contentSearchLoading && debouncedSearchQuery.length >= 2 && (
+                      {sessionSearchQuery ? (
+                        <button
+                          onClick={() => setSessionSearchQuery("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      ) : contentSearchLoading && debouncedSearchQuery.length >= 2 ? (
                         <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2">

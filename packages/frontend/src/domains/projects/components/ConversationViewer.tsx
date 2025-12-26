@@ -13,6 +13,7 @@ import {
   Brain,
   Loader2,
   Search,
+  Clipboard,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { MarkdownViewer } from "../../../components/MarkdownViewer";
@@ -429,6 +430,18 @@ function ContentBlock({
   highlightMatches,
   refCallback,
 }: ContentBlockProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error("Failed to copy:", e);
+    }
+  };
+
   if (block.type === "text") {
     // Skip empty text blocks
     if (!block.text || !block.text.trim()) return null;
@@ -438,11 +451,22 @@ function ContentBlock({
       <div
         ref={refCallback}
         className={cn(
-          "mb-2 text-sm p-3 rounded-lg overflow-hidden break-words",
+          "mb-2 text-sm p-3 rounded-lg overflow-hidden break-words relative group",
           role === "user" ? "bg-primary/10 text-left" : "bg-zinc-800/50",
           hasMatch && isMatch && "ring-2 ring-amber-500"
         )}
       >
+        <button
+          onClick={() => handleCopy(block.text)}
+          className="absolute top-2 right-2 p-1.5 rounded bg-zinc-700/80 hover:bg-zinc-600 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Copy to clipboard"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-emerald-500" />
+          ) : (
+            <Clipboard className="w-3.5 h-3.5" />
+          )}
+        </button>
         {searchQuery && hasMatch ? (
           <div className="whitespace-pre-wrap">{highlightMatches(block.text, isMatch)}</div>
         ) : (
