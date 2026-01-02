@@ -982,6 +982,7 @@ pub struct ProjectDetails {
     #[serde(rename = "claudeMdContent")]
     pub claude_md_content: Option<String>,
     pub commands: Vec<CommandInfo>,
+    pub agents: Vec<AgentInfo>,
     #[serde(rename = "mcpServers")]
     pub mcp_servers: Vec<McpServer>,
     #[serde(rename = "imageUrl")]
@@ -1007,6 +1008,9 @@ pub fn get_project_details(project_path: &str) -> Result<ProjectDetails, String>
     // Get project-specific commands from project's .claude/commands/
     let commands = get_project_commands(project_path)?;
 
+    // Get project-specific agents from project's .claude/agents/
+    let agents = get_project_agents(project_path)?;
+
     // Get project-specific MCP servers
     let mcp_servers = get_project_mcp_servers(project_path)?;
 
@@ -1018,6 +1022,7 @@ pub fn get_project_details(project_path: &str) -> Result<ProjectDetails, String>
         name,
         claude_md_content,
         commands,
+        agents,
         mcp_servers,
         image_url,
     })
@@ -1039,6 +1044,17 @@ pub fn get_project_commands(project_path: &str) -> Result<Vec<CommandInfo>, Stri
             is_directory: a.is_directory,
         }).collect()
     })
+}
+
+/// Get agents specific to a project (from project's .claude/agents/)
+pub fn get_project_agents(project_path: &str) -> Result<Vec<AgentInfo>, String> {
+    let agents_dir = PathBuf::from(project_path).join(".claude").join("agents");
+
+    if !agents_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    list_items_in_dir(&agents_dir)
 }
 
 /// Get MCP servers configured for a specific project

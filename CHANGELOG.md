@@ -2,6 +2,12 @@
 
 All notable changes to Claudit will be documented in this file.
 
+## [0.5.1] - 2026-01-02
+
+### Added
+- **Project Agents**: View and browse project-specific agents in the project details view
+- **Agent Preview**: Preview agent content and files within agent directories directly in the project view
+
 ## [0.5.0] - 2025-12-26
 
 ### Added
