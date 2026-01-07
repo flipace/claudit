@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 
 /// Manages application settings persistence
 pub struct SettingsService {
-    settings_path: PathBuf,
+    settings_path: Option<PathBuf>,
     cached_settings: Arc<RwLock<AppSettings>>,
 }
 
@@ -14,7 +14,11 @@ impl SettingsService {
         let settings_path = Self::get_settings_path();
 
         // Load settings from disk or use defaults
-        let settings = Self::load_from_disk(&settings_path).unwrap_or_default();
+        let settings = if let Some(path) = &settings_path {
+            Self::load_from_disk(path).unwrap_or_default()
+        } else {
+            AppSettings::default()
+        };
 
         Self {
             settings_path,
@@ -22,10 +26,8 @@ impl SettingsService {
         }
     }
 
-    fn get_settings_path() -> PathBuf {
-        let config_dir = dirs::config_dir()
-            .or_else(dirs::home_dir)
-            .expect("Could not find config directory");
+    fn get_settings_path() -> Option<PathBuf> {
+        let config_dir = dirs::config_dir().or_else(dirs::home_dir)?;
 
         let app_config_dir = config_dir.join("claudit");
 
@@ -34,7 +36,7 @@ impl SettingsService {
             let _ = fs::create_dir_all(&app_config_dir);
         }
 
-        app_config_dir.join("settings.json")
+        Some(app_config_dir.join("settings.json"))
     }
 
     fn load_from_disk(path: &PathBuf) -> Option<AppSettings> {
@@ -43,10 +45,15 @@ impl SettingsService {
     }
 
     fn save_to_disk(&self, settings: &AppSettings) -> Result<(), String> {
+        let path = match &self.settings_path {
+            Some(p) => p,
+            None => return Ok(()), // Silently ignore if no persistence possible
+        };
+
         let contents =
             serde_json::to_string_pretty(settings).map_err(|e| format!("Serialize error: {}", e))?;
 
-        fs::write(&self.settings_path, contents).map_err(|e| format!("Write error: {}", e))
+        fs::write(path, contents).map_err(|e| format!("Write error: {}", e))
     }
 
     /// Get current settings

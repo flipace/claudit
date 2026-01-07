@@ -99,7 +99,7 @@ shift
 DMG=""
 PROFILE=""
 REQUEST_ID=""
-TIMEOUT="600"
+TIMEOUT="86400"
 WAIT="false"
 UNIVERSAL="false"
 SKIP_BUILD="false"
